@@ -60,8 +60,14 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
 <script>
-const {createClient}=supabase;
-const sb=createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
+const SUPABASE_URL='https://ntbicukvdwytnyhxtmhx.supabase.co';
+const SUPABASE_KEY='sb_publishable_frlEOvbyv6D62ekNvNr0NQ_FcMKDEdD';
+let sb=null;
+try {
+  if (window.supabase && typeof window.supabase.createClient==='function') {
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  }
+} catch(e) { console.error('Supabase init error',e); }
 let session=null,user=null,events=[],filter='Tous',query='';
 
 const places=['Le Slalom','Le Network','Le Beeflor','Le Room','Footsal','Shicha Party chez Al','BBQ chez BOUBA','Shicha Party chez Alasko','Atieke Party chez Solokounboté'];
@@ -75,8 +81,19 @@ function fmtDate(d,t){return new Date(d+'T'+(t||'00:00')).toLocaleString('fr-FR'
 function catEmoji(c){return {Restaurant:'🍽️',Cinéma:'🎬',Sport:'⚽',Soirée:'🎉',Jeux:'🎲',Voyage:'✈️',Nature:'🌿'}[c]||'✨'}
 
 async function load(){
-  const {data:{session:s}}=await sb.auth.getSession(); session=s; user=s?.user||null;
-  await loadEvents(); updateAuthNav(); showHome();
+  updateAuthNav();
+  showHome();
+  if(!sb){ toast('Le service de connexion est temporairement indisponible.'); return; }
+  try {
+    const {data:{session:s}}=await sb.auth.getSession(); session=s; user=s?.user||null;
+    updateAuthNav();
+    await loadEvents();
+    showHome();
+  } catch(e) {
+    console.error('Initialisation:',e);
+    showHome();
+    toast('Connexion aux données impossible pour le moment.');
+  }
 }
 async function loadEvents(){
   const {data,error}=await sb.from('events').select('*, profiles:creator_id(username,full_name)').order('event_date',{ascending:true}).order('event_time',{ascending:true});
