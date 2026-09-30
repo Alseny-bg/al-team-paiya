@@ -160,7 +160,7 @@ function openAuth(mode='login'){
 }
 async function authSubmit(ev,mode){ev.preventDefault();const email=document.getElementById('email').value,password=document.getElementById('password').value;
  let res;
- if(mode==='signup'){const full_name=document.getElementById('fullName').value,username=document.getElementById('username').value;res=await sb.auth.signUp({email,password,options:{data:{full_name,username}}})}
+ if(mode==='signup'){const full_name=document.getElementById('fullName').value,username=document.getElementById('username').value;res=await sb.auth.signUp({email,password,options:{data:{full_name,username},emailRedirectTo:window.location.origin}})}
  else res=await sb.auth.signInWithPassword({email,password});
  if(res.error){toast(res.error.message);return}
  if(mode==='signup'&&!res.data.session){toast('Compte créé. Vérifie ton email si la confirmation est activée.');closeModal();return}
