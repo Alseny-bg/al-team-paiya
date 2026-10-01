@@ -314,19 +314,29 @@ async function logout() {
 async function loadEvents() {
   if (!sb) { allEvents = []; return; }
   try {
-    var result = await sb.from('events').select('*, profiles:creator_id(username,full_name)').order('event_date',{ascending:true}).order('event_time',{ascending:true});
-    if (result.error) throw result.error;
+    var result = await sb.from('events')
+      .select('*, profiles:creator_id(username,full_name)')
+      .order('event_date',{ascending:true})
+      .order('event_time',{ascending:true});
+    if (result.error) {
+      console.error('Lecture events:', result.error);
+      toast('Erreur Supabase : ' + (result.error.message || 'lecture des sorties impossible'));
+      allEvents = [];
+      return;
+    }
     var rows = result.data || [];
     var ids = rows.map(function(e){return e.id;});
     var counts = {};
     if (ids.length) {
       var p = await sb.from('event_participants').select('event_id').in('event_id',ids);
+      if (p.error) console.error('Lecture participants:',p.error);
       (p.data || []).forEach(function(x){ counts[x.event_id] = (counts[x.event_id] || 0) + 1; });
     }
     allEvents = rows.map(function(e){ e.count = counts[e.id] || 0; return e; });
   } catch(e) {
     console.error('Supabase:',e);
     allEvents = [];
+    toast('Erreur de connexion aux sorties : ' + (e.message || e));
   }
 }
 
@@ -392,8 +402,12 @@ async function createEvent(ev) {
     city:document.getElementById('city').value.trim(),event_date:document.getElementById('date').value,
     event_time:document.getElementById('time').value,price:0,max_participants:Number(document.getElementById('max').value)
   };
-  var r = await sb.from('events').insert(payload);
-  if (r.error) { toast(r.error.message); return; }
+  var r = await sb.from('events').insert(payload).select().single();
+  if (r.error) {
+    console.error('Création sortie:', r.error);
+    toast('Impossible de créer la sortie : ' + (r.error.message || 'erreur Supabase'));
+    return;
+  }
   closeModal();
   await loadEvents();
   showExplore();
