@@ -53,16 +53,37 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   <div id="authNav"><button class="ghost" onclick="openAuth('login')">Se connecter</button><button class="primary" onclick="openAuth('signup')">S'inscrire</button></div>
 </div></header>
 
-<main id="app"></main>
+<main id="app">
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <span class="pill">✨ La plateforme des sorties entre amis</span>
+        <h1>On sort ?<br><span>Team Paiya.</span></h1>
+        <p>Découvre des sorties, rejoins un groupe et crée tes propres moments. Simple, gratuit et pensé pour se retrouver.</p>
+        <div class="kpis">
+          <div class="kpi"><strong>100%</strong><span>sorties gratuites au lancement</span></div>
+          <div class="kpi"><strong>9+</strong><span>lieux Team Paiya disponibles</span></div>
+          <div class="kpi"><strong>1 clic</strong><span>pour rejoindre une sortie</span></div>
+        </div>
+      </div>
+      <div class="hero-card"><span class="pill">TEAM PAIYA</span><h2>Plus de sorties.<br>Plus de rencontres.</h2><p>Choisis une activité et retrouve la Team Paiya.</p></div>
+    </section>
+  </div>
+</main>
 <div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()"><div id="modalBox" class="modal-box"></div></div>
 <div id="toast" class="toast"></div>
 
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
 <script>
-const {createClient}=supabase;
-const sb=createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
-let session=null,user=null,events=[],filter='Tous',query='';
+let sb=null, session=null,user=null,events=[],filter='Tous',query='';
+try{
+  if(!window.supabase) throw new Error('La bibliothèque Supabase ne s’est pas chargée.');
+  if(!window.TEAM_PAIYA_CONFIG) throw new Error('config.js est introuvable.');
+  sb=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
+}catch(err){
+  console.error('Initialisation Supabase:',err);
+}
 
 const places=['Le Slalom','Le Network','Le Beeflor','Le Room','Footsal','Shicha Party chez Al','BBQ chez BOUBA','Shicha Party chez Alasko','Atieke Party chez Solokounboté'];
 const cats=['Tous','Restaurant','Cinéma','Sport','Soirée','Jeux','Voyage','Nature'];
@@ -75,8 +96,9 @@ function fmtDate(d,t){return new Date(d+'T'+(t||'00:00')).toLocaleString('fr-FR'
 function catEmoji(c){return {Restaurant:'🍽️',Cinéma:'🎬',Sport:'⚽',Soirée:'🎉',Jeux:'🎲',Voyage:'✈️',Nature:'🌿'}[c]||'✨'}
 
 async function load(){
-  // Render the interface immediately, even if Supabase takes time to respond.
+  // Toujours afficher l’interface, même si Supabase ou son CDN rencontre un problème.
   updateAuthNav(); showHome();
+  if(!sb){ toast('Le site est chargé, mais la connexion aux données est indisponible.'); return; }
   try{
     const {data:{session:s}}=await Promise.race([
       sb.auth.getSession(),
@@ -171,7 +193,7 @@ async function authSubmit(ev,mode){ev.preventDefault();const email=document.getE
  if(mode==='signup'&&!res.data.session){toast('Compte créé. Vérifie ton email si la confirmation est activée.');closeModal();return}
  session=res.data.session;user=session.user;updateAuthNav();closeModal();await loadEvents();showHome();toast('Connexion réussie !')
 }
-async function logout(){await sb.auth.signOut();user=null;session=null;updateAuthNav();showHome();toast('À bientôt 👋')}
+async function logout(){if(!sb)return;await sb.auth.signOut();user=null;session=null;updateAuthNav();showHome();toast('À bientôt 👋')}
 
 async function showEvent(id){
  const e=events.find(x=>x.id===id);if(!e)return;
@@ -232,7 +254,9 @@ function editProfile(){
  <button class="primary">Enregistrer</button></form>`);
 }
 async function saveProfile(ev){ev.preventDefault();const payload={full_name:document.getElementById('pfname').value,city:document.getElementById('pcity').value,bio:document.getElementById('pbio').value};const {error}=await sb.from('profiles').update(payload).eq('id',user.id);if(error){toast(error.message);return}closeModal();showProfile();toast('Profil mis à jour')}
-sb.auth.onAuthStateChange(async(_event,s)=>{session=s;user=s?.user||null;updateAuthNav();if(_event==='SIGNED_IN'){await loadEvents();showHome()}});
+if(sb){
+  sb.auth.onAuthStateChange(async(_event,s)=>{session=s;user=s?.user||null;updateAuthNav();if(_event==='SIGNED_IN'){await loadEvents();showHome()}});
+}
 
 load();
 </script>
