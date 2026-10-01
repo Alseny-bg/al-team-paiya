@@ -60,14 +60,8 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
 <script>
-const SUPABASE_URL='https://ntbicukvdwytnyhxtmhx.supabase.co';
-const SUPABASE_KEY='sb_publishable_frlEOvbyv6D62ekNvNr0NQ_FcMKDEdD';
-let sb=null;
-try {
-  if (window.supabase && typeof window.supabase.createClient==='function') {
-    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  }
-} catch(e) { console.error('Supabase init error',e); }
+const {createClient}=supabase;
+const sb=createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
 let session=null,user=null,events=[],filter='Tous',query='';
 
 const places=['Le Slalom','Le Network','Le Beeflor','Le Room','Footsal','Shicha Party chez Al','BBQ chez BOUBA','Shicha Party chez Alasko','Atieke Party chez Solokounboté'];
@@ -81,19 +75,8 @@ function fmtDate(d,t){return new Date(d+'T'+(t||'00:00')).toLocaleString('fr-FR'
 function catEmoji(c){return {Restaurant:'🍽️',Cinéma:'🎬',Sport:'⚽',Soirée:'🎉',Jeux:'🎲',Voyage:'✈️',Nature:'🌿'}[c]||'✨'}
 
 async function load(){
-  updateAuthNav();
-  showHome();
-  if(!sb){ toast('Le service de connexion est temporairement indisponible.'); return; }
-  try {
-    const {data:{session:s}}=await sb.auth.getSession(); session=s; user=s?.user||null;
-    updateAuthNav();
-    await loadEvents();
-    showHome();
-  } catch(e) {
-    console.error('Initialisation:',e);
-    showHome();
-    toast('Connexion aux données impossible pour le moment.');
-  }
+  const {data:{session:s}}=await sb.auth.getSession(); session=s; user=s?.user||null;
+  await loadEvents(); updateAuthNav(); showHome();
 }
 async function loadEvents(){
   const {data,error}=await sb.from('events').select('*, profiles:creator_id(username,full_name)').order('event_date',{ascending:true}).order('event_time',{ascending:true});
@@ -160,7 +143,7 @@ function openAuth(mode='login'){
 }
 async function authSubmit(ev,mode){ev.preventDefault();const email=document.getElementById('email').value,password=document.getElementById('password').value;
  let res;
- if(mode==='signup'){const full_name=document.getElementById('fullName').value,username=document.getElementById('username').value;res=await sb.auth.signUp({email,password,options:{data:{full_name,username},emailRedirectTo:window.location.origin}})}
+ if(mode==='signup'){const full_name=document.getElementById('fullName').value,username=document.getElementById('username').value;res=await sb.auth.signUp({email,password,options:{data:{full_name,username}}})}
  else res=await sb.auth.signInWithPassword({email,password});
  if(res.error){toast(res.error.message);return}
  if(mode==='signup'&&!res.data.session){toast('Compte créé. Vérifie ton email si la confirmation est activée.');closeModal();return}
@@ -173,12 +156,11 @@ async function showEvent(id){
  let joined=false;
  if(user){const {data}=await sb.from('event_participants').select('user_id').eq('event_id',id).eq('user_id',user.id);joined=!!data?.length}
  const {data:parts}=await sb.from('event_participants').select('user_id, profiles(username,full_name)').eq('event_id',id);
- const actionHtml=user?(joined?'<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>':(e.count>=e.max_participants?'<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>':'<button class="primary" style="width:100%;margin-top:18px" onclick="join(\''+e.id+'\')">Rejoindre la sortie</button>')):'<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\'login\')">Connecte-toi pour rejoindre</button>';
  openModal(`<div class="modal-head"><div><span class="pill">${catEmoji(e.category)} ${esc(e.category)}</span><h2 style="margin:10px 0 4px">${esc(e.title)}</h2><div class="muted">${esc(e.place)} · ${esc(e.city)}</div></div><button class="close" onclick="closeModal()">×</button></div>
  <p style="line-height:1.6;color:#5f5968">${esc(e.description||'Pas de description.')}</p>
  <div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 ${fmtDate(e.event_date,e.event_time)}</div><div>👥 ${e.count}/${e.max_participants} participants</div><div>💜 Gratuit</div><div>Créée par ${esc(e.profiles?.full_name||e.profiles?.username||'membre')}</div></div>
  <h3>Participants</h3><div>${(parts||[]).length?parts.map(p=>`<span class="pill" style="margin:3px">${esc(p.profiles?.full_name||p.profiles?.username||'Membre')}</span>`).join(''):'<span class="muted">Sois le premier à rejoindre !</span>'}</div>
- ${actionHtml}
+ ${user?(joined?'<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>:(e.count>=e.max_participants?'<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>':`<button class="primary" style="width:100%;margin-top:18px" onclick="join('${e.id}')">Rejoindre la sortie</button>`)):'<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth('login')">Connecte-toi pour rejoindre</button>'}
  </div>`)
 }
 async function join(id){
