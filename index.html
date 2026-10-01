@@ -75,16 +75,38 @@ function fmtDate(d,t){return new Date(d+'T'+(t||'00:00')).toLocaleString('fr-FR'
 function catEmoji(c){return {Restaurant:'🍽️',Cinéma:'🎬',Sport:'⚽',Soirée:'🎉',Jeux:'🎲',Voyage:'✈️',Nature:'🌿'}[c]||'✨'}
 
 async function load(){
-  const {data:{session:s}}=await sb.auth.getSession(); session=s; user=s?.user||null;
-  await loadEvents(); updateAuthNav(); showHome();
+  // Render the interface immediately, even if Supabase takes time to respond.
+  updateAuthNav(); showHome();
+  try{
+    const {data:{session:s}}=await Promise.race([
+      sb.auth.getSession(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Connexion Supabase trop longue')),8000))
+    ]);
+    session=s; user=s?.user||null;
+    updateAuthNav();
+    await loadEvents();
+    showHome();
+  }catch(err){
+    console.error('Initialisation Supabase:',err);
+    toast('Le site est chargé. La connexion aux données prend plus de temps.');
+  }
 }
 async function loadEvents(){
-  const {data,error}=await sb.from('events').select('*, profiles:creator_id(username,full_name)').order('event_date',{ascending:true}).order('event_time',{ascending:true});
-  if(error){console.error(error);events=[];return}
-  const ids=(data||[]).map(x=>x.id);
-  let counts={};
-  if(ids.length){const {data:p}=await sb.from('event_participants').select('event_id').in('event_id',ids);(p||[]).forEach(x=>counts[x.event_id]=(counts[x.event_id]||0)+1)}
-  events=(data||[]).map(e=>({...e,count:counts[e.id]||0}));
+  try{
+    const {data,error}=await sb.from('events').select('*, profiles:creator_id(username,full_name)').order('event_date',{ascending:true}).order('event_time',{ascending:true});
+    if(error){console.error('Chargement sorties:',error);events=[];return}
+    const ids=(data||[]).map(x=>x.id);
+    let counts={};
+    if(ids.length){
+      const {data:p,error:pe}=await sb.from('event_participants').select('event_id').in('event_id',ids);
+      if(pe) console.error('Participants:',pe);
+      (p||[]).forEach(x=>counts[x.event_id]=(counts[x.event_id]||0)+1)
+    }
+    events=(data||[]).map(e=>({...e,count:counts[e.id]||0}));
+  }catch(err){
+    console.error('Chargement sorties:',err);
+    events=[];
+  }
 }
 function updateAuthNav(){
   document.getElementById('authNav').innerHTML=user?
