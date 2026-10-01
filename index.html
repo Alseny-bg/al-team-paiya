@@ -42,6 +42,18 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 .kpi strong{display:block;font-size:22px;margin-bottom:3px}
 .kpi span{font-size:12px;color:var(--muted)}
 @media(max-width:650px){.kpis{grid-template-columns:1fr}.hero{padding-top:42px}}
+
+.gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
+.gallery-item{position:relative;border:0;padding:0;background:#fff;border-radius:16px;overflow:hidden;aspect-ratio:1/1;cursor:pointer;box-shadow:0 6px 20px #21113b0d}
+.gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease}
+.gallery-item:hover img{transform:scale(1.05)}
+.gallery-overlay{position:fixed;inset:0;background:#12091dcc;display:none;align-items:center;justify-content:center;padding:30px;z-index:100}
+.gallery-overlay.show{display:flex}
+.gallery-view{position:relative;max-width:1000px;width:100%;max-height:90vh;text-align:center}
+.gallery-view img{max-width:100%;max-height:82vh;border-radius:18px;object-fit:contain;box-shadow:0 20px 60px #0008}
+.gallery-close{position:absolute;right:-5px;top:-48px;width:38px;height:38px;border-radius:50%;background:#fff;color:#171321;font-size:24px}
+@media(max-width:850px){.gallery-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.gallery-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -176,6 +188,7 @@ function showHome() {
     '<article class="card"><div class="body"><span class="pill">03</span><h3>🎉 Profite du moment</h3><div class="muted">Retrouve les participants.</div></div></article></div></section>' +
     '<section class="section"><div class="section-head"><div><h2>Les prochaines sorties</h2><div class="muted">Les bons plans du moment</div></div><button class="ghost" onclick="showExplore()">Tout voir →</button></div>' +
     '<div class="grid">' + (featured.length ? featured.map(card).join('') : '<div class="empty" style="grid-column:1/-1">Aucune sortie pour le moment. Sois le premier à en créer une !</div>') + '</div></section>' +
+    "\n<section class=\"section\">\n  <div class=\"section-head\">\n    <div><h2>📸 Les moments Team Paiya</h2><div class=\"muted\">Quelques souvenirs de nos sorties.</div></div>\n  </div>\n  <div class=\"gallery-grid\">\n    <button class=\"gallery-item\" onclick=\"openGallery(1)\"><img src=\"photo-1.jpg\" alt=\"Moment Team Paiya 1\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(2)\"><img src=\"photo-2.jpg\" alt=\"Moment Team Paiya 2\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(3)\"><img src=\"photo-3.jpg\" alt=\"Moment Team Paiya 3\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(4)\"><img src=\"photo-4.jpg\" alt=\"Moment Team Paiya 4\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(5)\"><img src=\"photo-5.jpg\" alt=\"Moment Team Paiya 5\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(6)\"><img src=\"photo-6.jpg\" alt=\"Moment Team Paiya 6\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(7)\"><img src=\"photo-7.jpg\" alt=\"Moment Team Paiya 7\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(8)\"><img src=\"photo-8.jpg\" alt=\"Moment Team Paiya 8\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(9)\"><img src=\"photo-9.jpg\" alt=\"Moment Team Paiya 9\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(10)\"><img src=\"photo-10.jpg\" alt=\"Moment Team Paiya 10\" loading=\"lazy\"></button>\n  </div>\n</section>" +
     '</div>';
 }
 
@@ -200,6 +213,24 @@ function renderExplore() {
   if (count) count.textContent = list.length + ' sortie(s) disponible(s)';
   if (grid) grid.innerHTML = list.length ? list.map(card).join('') :
     '<div class="empty" style="grid-column:1/-1">Aucune sortie ne correspond à ta recherche.</div>';
+}
+
+function openGallery(number) {
+  var overlay=document.getElementById('galleryOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='galleryOverlay';
+    overlay.className='gallery-overlay';
+    overlay.onclick=function(e){if(e.target===overlay) closeGallery();};
+    overlay.innerHTML='<div class="gallery-view"><button class="gallery-close" onclick="closeGallery()">×</button><img id="galleryImage" alt="Moment Team Paiya"></div>';
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('galleryImage').src='photo-'+number+'.jpg';
+  overlay.classList.add('show');
+}
+function closeGallery(){
+  var overlay=document.getElementById('galleryOverlay');
+  if(overlay) overlay.classList.remove('show');
 }
 
 function doSearch() {
