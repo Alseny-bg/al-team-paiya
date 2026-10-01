@@ -54,6 +54,11 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 .gallery-close{position:absolute;right:-5px;top:-48px;width:38px;height:38px;border-radius:50%;background:#fff;color:#171321;font-size:24px}
 @media(max-width:850px){.gallery-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.gallery-grid{grid-template-columns:repeat(2,1fr)}}
+
+.cover{overflow:hidden;position:relative}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cover:after{z-index:1}
+.cover span{z-index:2}
 </style>
 </head>
 <body>
@@ -154,9 +159,27 @@ function updateAuthNav() {
   }
 }
 
+function eventPhoto(event) {
+  var map = {
+    'Restaurant': 'photo-1.jpg',
+    'Cinéma': 'photo-2.jpg',
+    'Sport': 'photo-3.jpg',
+    'Soirée': 'photo-4.jpg',
+    'Jeux': 'photo-5.jpg',
+    'Voyage': 'photo-6.jpg',
+    'Nature': 'photo-7.jpg'
+  };
+  var index = 0;
+  if (event && event.id) {
+    var text = String(event.id);
+    for (var i=0;i<text.length;i++) index += text.charCodeAt(i);
+  }
+  return map[event.category] || ('photo-' + ((index % 10) + 1) + '.jpg');
+}
 function card(event) {
+  var photo = eventPhoto(event);
   return '<article class="card">' +
-    '<div class="cover"><span>' + emoji(event.category) + ' ' + esc(event.category) + '</span></div>' +
+    '<div class="cover"><img src="' + photo + '" alt="' + esc(event.title) + '" loading="lazy"><span>' + emoji(event.category) + ' ' + esc(event.category) + '</span></div>' +
     '<div class="body">' +
     '<div class="row"><span class="pill">' + esc(event.place) + '</span><span class="muted">' + esc(event.city) + '</span></div>' +
     '<h3>' + esc(event.title) + '</h3>' +
