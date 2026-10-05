@@ -408,6 +408,16 @@ async function createEvent(ev) {
     toast('Impossible de créer la sortie : ' + (r.error.message || 'erreur Supabase'));
     return;
   }
+  if (!r.data || !r.data.id) {
+    toast('La sortie a été créée mais aucun identifiant n’a été retourné.');
+    return;
+  }
+  // Ajouter automatiquement le créateur comme premier participant.
+  var joinCreator = await sb.from('event_participants').insert({event_id:r.data.id,user_id:currentUser.id});
+  if (joinCreator.error && !String(joinCreator.error.message || '').toLowerCase().includes('duplicate')) {
+    console.error('Ajout créateur:', joinCreator.error);
+    toast('Sortie créée, mais ajout du créateur impossible : ' + (joinCreator.error.message || 'erreur'));
+  }
   closeModal();
   await loadEvents();
   showExplore();
