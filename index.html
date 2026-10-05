@@ -315,7 +315,7 @@ async function loadEvents() {
   if (!sb) { allEvents = []; return; }
   try {
     var result = await sb.from('events')
-      .select('*, profiles:creator_id(username,full_name)')
+      .select('*')
       .order('event_date',{ascending:true})
       .order('event_time',{ascending:true});
     if (result.error) {
