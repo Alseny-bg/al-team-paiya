@@ -441,7 +441,8 @@ async function showEvent(id) {
   }
   var eventDateTime = new Date(e.event_date + 'T' + (e.event_time || '00:00'));
   var isPast = eventDateTime.getTime() < Date.now();
-  var reviewButton = (currentUser && joined && isPast) ?
+  var canReview = currentUser && (joined || e.creator_id === currentUser.id) && isPast;
+  var reviewButton = canReview ?
     '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\''+id+'\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
   var reviewsHtml = reviews.length ?
     reviews.map(function(r){
