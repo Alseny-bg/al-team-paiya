@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.puter.com/v2/"></script>
 <script src="config.js"></script>
 <style>
 :root{--p:#6d28d9;--p2:#8b5cf6;--ink:#171321;--muted:#716b7c;--bg:#f7f6fa;--card:#fff;--line:#ece8f2;--ok:#0f9d67;--danger:#d83b58}
@@ -746,20 +747,18 @@ function openCreate() {
     '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
     '<div class="card" style="padding:14px;background:#faf9fc">' +
     '<strong>📸 Illustration de la sortie</strong>' +
-    '<div class="muted" style="font-size:12px;margin:5px 0 10px">Ajoute ta photo ou laisse l’IA créer une illustration à partir des informations de ta sortie.</div>' +
+    '<div class="muted" style="font-size:12px;margin:5px 0 10px">Ajoute ta photo ou, si tu n’en mets pas, AL Team Paiya créera automatiquement une illustration IA adaptée à ta sortie.</div>' +
     '<div id="eventImagePreview" style="display:none;margin:10px 0;border-radius:14px;overflow:hidden;height:150px;background:#eee"><img id="eventImagePreviewImg" style="width:100%;height:100%;object-fit:cover"></div>' +
-    '<label style="display:block">Ta photo<input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px"></label>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button id="generateAiImageBtn" class="ghost" type="button">✨ Générer une illustration IA</button><button id="removeEventImageBtn" class="ghost" type="button" style="display:none">✕ Retirer la photo</button></div>' +
-    '<div id="aiImageStatus" class="muted" style="font-size:12px;margin-top:8px"></div>' +
+    '<label style="display:block">Ta photo (optionnelle)<input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px"></label>' +
+    '<button id="removeEventImageBtn" class="ghost" type="button" style="display:none;margin-top:10px">✕ Retirer la photo</button>' +
+    '<div id="aiImageStatus" class="muted" style="font-size:12px;margin-top:8px">✨ Sans photo, une illustration IA sera générée automatiquement.</div>' +
     '</div>' +
     '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
   var fileInput = document.getElementById('eventImageFile');
   var preview = document.getElementById('eventImagePreview');
   var previewImg = document.getElementById('eventImagePreviewImg');
-  var aiBtn = document.getElementById('generateAiImageBtn');
   var removeBtn = document.getElementById('removeEventImageBtn');
   var aiStatus = document.getElementById('aiImageStatus');
-  var pendingAiImage = false;
 
   if (fileInput) fileInput.onchange = function() {
     var file = fileInput.files && fileInput.files[0];
@@ -772,25 +771,14 @@ function openCreate() {
     previewImg.src = URL.createObjectURL(file);
     preview.style.display = 'block';
     removeBtn.style.display = 'inline-flex';
-    aiStatus.textContent = 'Photo sélectionnée. Elle remplacera l’illustration IA.';
-    pendingAiImage = false;
+    aiStatus.textContent = '📸 Photo sélectionnée : elle sera utilisée pour la sortie.';
   };
   if (removeBtn) removeBtn.onclick = function() {
     fileInput.value = '';
     preview.style.display = 'none';
     previewImg.removeAttribute('src');
     removeBtn.style.display = 'none';
-    aiStatus.textContent = '';
-    pendingAiImage = false;
-  };
-  if (aiBtn) aiBtn.onclick = function() {
-    if (!document.getElementById('title').value.trim()) {
-      toast('Indique d’abord le nom de la sortie.');
-      return;
-    }
-    pendingAiImage = true;
-    aiStatus.textContent = '✨ L’illustration IA sera générée lors de la création de la sortie.';
-    aiBtn.textContent = '✓ IA activée';
+    aiStatus.textContent = '✨ Sans photo, une illustration IA sera générée automatiquement.';
   };
 
   var createBtn = document.getElementById('createEventButton');
@@ -824,15 +812,37 @@ async function uploadEventImage(eventId, file) {
   return url;
 }
 
-async function generateAiEventImage(eventId) {
-  if (!sb || !currentUser) return null;
-  var result = await sb.functions.invoke('generate-event-image', {body:{event_id:eventId}});
-  if (result.error) {
-    var details = result.error.message || 'Génération IA indisponible.';
-    throw new Error(details);
+async function generatePuterEventImage(eventId, eventInfo) {
+  if (!sb || !currentUser || !window.puter || !puter.ai || !puter.ai.txt2img) {
+    throw new Error('Le générateur IA n’est pas disponible.');
   }
-  if (result.data && result.data.error) throw new Error(result.data.error);
-  return result.data && result.data.image_url ? result.data.image_url : null;
+  var prompt = [
+    'Create a premium realistic editorial photograph for a social outing platform called AL Team Paiya.',
+    'Show a friendly group of young adults enjoying the activity, natural candid atmosphere, stylish but realistic photography, warm lighting, high-end social media quality.',
+    'Activity category: ' + (eventInfo.category || 'social outing') + '.',
+    'Outing title: ' + (eventInfo.title || '') + '.',
+    'Place: ' + (eventInfo.place || '') + ', ' + (eventInfo.city || '') + '.',
+    'Description: ' + (eventInfo.description || '') + '.',
+    'No text, no logos, no watermarks, no readable signs. Landscape composition suitable for a website card.'
+  ].join(' ');
+  var img = await puter.ai.txt2img(prompt, {model:'black-forest-labs/flux-schnell'});
+  if (!img || !img.src) throw new Error('L’image IA n’a pas pu être générée.');
+  var response = await fetch(img.src);
+  if (!response.ok) throw new Error('Impossible de récupérer l’image IA.');
+  var blob = await response.blob();
+  var path = currentUser.id + '/' + eventId + '-ai.png';
+  var up = await sb.storage.from('event-images').upload(path, blob, {
+    upsert:true,
+    contentType:'image/png',
+    cacheControl:'31536000'
+  });
+  if (up.error) throw new Error('Impossible d’enregistrer l’image IA : ' + up.error.message);
+  var pub = sb.storage.from('event-images').getPublicUrl(path);
+  var url = pub.data && pub.data.publicUrl ? pub.data.publicUrl : null;
+  if (!url) throw new Error('Impossible de récupérer l’URL de l’image IA.');
+  var upd = await sb.from('events').update({image_url:url}).eq('id',eventId).eq('creator_id',currentUser.id);
+  if (upd.error) throw new Error('Impossible d’associer l’image IA à la sortie.');
+  return url;
 }
 
 async function createEvent(ev) {
@@ -873,19 +883,24 @@ async function createEvent(ev) {
   }
 
   var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
-  var useAi = pendingAiImage;
 
   try {
     if (imageFile) {
-      toast('Ajout de ta photo...');
+      toast('📸 Ajout de ta photo...');
       await uploadEventImage(r.data.id, imageFile);
-    } else if (useAi) {
-      toast('✨ L’IA prépare l’illustration...');
-      await generateAiEventImage(r.data.id);
+    } else {
+      toast('✨ Création automatique de l’illustration IA...');
+      await generatePuterEventImage(r.data.id, {
+        title: payload.title,
+        category: payload.category,
+        place: payload.place,
+        city: payload.city,
+        description: payload.description
+      });
     }
   } catch (imageError) {
     console.error('Image sortie:', imageError);
-    toast('Sortie créée, mais image non ajoutée : ' + (imageError.message || imageError));
+    toast('Sortie créée. L’illustration IA n’a pas pu être ajoutée ; une image de catégorie sera utilisée.');
   }
 
   closeModal();
