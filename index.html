@@ -382,8 +382,11 @@ async function showEvent(id) {
     '<p style="line-height:1.6;color:#5f5968">'+esc(e.description || 'Pas de description.')+'</p>' +
     '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
     '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
-    button
+    '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + button
   );
+  var inviteBtn = document.getElementById('inviteBtn');
+  if (inviteBtn && (!currentUser || e.creator_id !== currentUser.id)) inviteBtn.style.display='none';
+  if (inviteBtn) inviteBtn.onclick=function(){ openInviteMembers(id); };
 }async function openInviteMembers(eventId) {
   if (!currentUser || !sb) { openAuth('login'); return; }
   var ev = allEvents.find(function(x){ return String(x.id) === String(eventId); });
