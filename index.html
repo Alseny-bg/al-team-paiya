@@ -172,8 +172,12 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script><style>
 @media(max-width:700px){
-  header{backdrop-filter:none;-webkit-backdrop-filter:none}
-  .nav{position:relative!important}
+  html,body{overflow-x:hidden}
+  header{position:relative!important;z-index:99999!important;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:auto!important}
+  header *{pointer-events:auto!important}
+  .nav{position:relative!important;z-index:100000!important}
+  #authNav{position:relative!important;z-index:100001!important}
+  #authNav button{position:relative!important;z-index:100002!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
   .modal{isolation:isolate}
   button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 }
@@ -1195,6 +1199,38 @@ if (sb) {
     },true);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script><script>
+(function(){
+  function mobileAuthTouch(e){
+    var t=e.target;
+    var b=t && t.closest ? t.closest('#authNav button') : null;
+    if(!b) return;
+    var label=(b.textContent||'').trim();
+    if(label.indexOf('Se connecter')!==0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    try{
+      if(typeof window.openAuth==='function'){
+        window.openAuth('login');
+        return;
+      }
+    }catch(err){console.error(err);}
+    var m=document.getElementById('modal'), box=document.getElementById('modalBox');
+    if(!m||!box) return;
+    box.innerHTML='<div class="modal-head"><h2>Bon retour 👋</h2><button type="button" class="close" id="mobileCloseAuth">×</button></div><form id="mobileAuthForm" class="form"><label>Email<input id="mobileEmail" type="email" autocomplete="email" required></label><label>Mot de passe<input id="mobilePassword" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Se connecter</button></form>';
+    m.classList.add('show');
+    document.getElementById('mobileCloseAuth').onclick=function(){m.classList.remove('show');};
+    document.getElementById('mobileAuthForm').onsubmit=async function(ev){
+      ev.preventDefault();
+      var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
+      var r=await client.auth.signInWithPassword({email:document.getElementById('mobileEmail').value.trim(),password:document.getElementById('mobilePassword').value});
+      if(r.error){alert(r.error.message);return;}
+      location.reload();
+    };
+  }
+  document.addEventListener('touchend',mobileAuthTouch,{capture:true,passive:false});
 })();
 </script></body>
 </html>
