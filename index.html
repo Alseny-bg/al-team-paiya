@@ -99,6 +99,11 @@ var currentUser = null;
 var allEvents = [];
 var currentFilter = 'Tous';
 var currentQuery = '';
+var advancedCity = '';
+var advancedDate = '';
+var advancedPlace = 'Tous';
+var favoritesOnly = false;
+var favoriteIds = new Set();
 var places = ['Le Slalom','Le Network','Le Beeflor','Le Room','Footsal','Shicha Party chez Al','BBQ chez BOUBA','Shicha Party chez Alasko','Atieke Party chez Solokounboté'];
 var categories = ['Tous','Restaurant','Cinéma','Sport','Soirée','Jeux','Voyage','Nature'];
 
@@ -153,7 +158,7 @@ function updateAuthNav() {
   var nav = document.getElementById('authNav');
   if (!nav) return;
   if (currentUser) {
-    nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="openNotificationCenter()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
+    nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showFavorites()">❤️ Favoris</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="openNotificationCenter()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
   } else {
     nav.innerHTML = '<button class="ghost" onclick="openAuth(\'login\')">Se connecter</button><button class="primary" onclick="openAuth(\'signup\')">S\'inscrire</button>';
   }
@@ -185,7 +190,7 @@ function card(event) {
     '<h3>' + esc(event.title) + '</h3>' +
     '<div class="meta"><div>📅 ' + dateLabel(event.event_date,event.event_time) + '</div>' +
     '<div>👤 ' + event.count + '/' + event.max_participants + ' participants</div><div>💜 Gratuit</div></div>' +
-    '<button class="primary" style="width:100%;margin-top:14px" onclick="showEvent(\'' + event.id + '\')">Voir la sortie</button>' +
+    '<div style="display:flex;gap:8px;margin-top:14px"><button class="primary" style="flex:1" onclick="showEvent(\'' + event.id + '\')">Voir la sortie</button><button class="ghost" title="Ajouter aux favoris" style="font-size:18px;padding:8px 12px" onclick="toggleFavorite(\'' + event.id + '\');event.stopPropagation()">' + (favoriteIds.has(event.id) ? '❤️' : '♡') + '</button></div>' +
     '</div></article>';
 }
 
@@ -221,6 +226,9 @@ function showExplore() {
     '<button class="primary" onclick="openCreate()">+ Créer</button></div>' +
     '<div class="search"><input id="exploreSearch" placeholder="Rechercher une sortie..." value="' + esc(currentQuery) + '" oninput="currentQuery=this.value;renderExplore()"></div>' +
     '<div class="filters">' + categories.map(function(cat){return '<button class="filter ' + (currentFilter===cat?'active':'') + '" onclick="currentFilter=\'' + cat + '\';renderExplore()">' + cat + '</button>';}).join('') + '</div>' +
+    '<div class="card" style="margin-bottom:20px"><div class="body"><div class="section-head" style="margin-bottom:12px"><div><h3 style="margin:0">🔎 Recherche avancée</h3><div class="muted">Affine les sorties selon tes critères.</div></div><button class="ghost" onclick="resetAdvancedSearch()">Réinitialiser</button></div>' +
+    '<div class="two"><label>Ville<input id="advancedCity" placeholder="Ex. Lille" value="' + esc(advancedCity) + '" oninput="advancedCity=this.value;renderExplore()"></label><label>Date<input id="advancedDate" type="date" value="' + esc(advancedDate) + '" onchange="advancedDate=this.value;renderExplore()"></label></div>' +
+    '<div class="two" style="margin-top:12px"><label>Lieu<select id="advancedPlace" onchange="advancedPlace=this.value;renderExplore()"><option>Tous</option>' + places.map(function(p){return '<option '+(advancedPlace===p?'selected':'')+'>'+esc(p)+'</option>';}).join('') + '</select></label><label style="display:flex;align-items:center;gap:8px;margin-top:24px"><input id="favoritesOnly" type="checkbox" style="width:auto;margin:0" '+(favoritesOnly?'checked':'')+' onchange="favoritesOnly=this.checked;renderExplore()"> ❤️ Mes favoris uniquement</label></div></div></div>' +
     '<div id="exploreMap" style="height:420px;border-radius:20px;overflow:hidden;border:1px solid var(--line);margin-bottom:24px"></div><div id="exploreGrid" class="grid"></div></section></div>';
   renderExplore();
   setTimeout(renderExploreMap, 50);
@@ -230,7 +238,11 @@ function renderExplore() {
   var list = allEvents.filter(function(e){
     var text = [e.title,e.place,e.city,e.description].join(' ').toLowerCase();
     return (currentFilter === 'Tous' || e.category === currentFilter) &&
-      (!currentQuery || text.indexOf(currentQuery.toLowerCase()) !== -1);
+      (!currentQuery || text.indexOf(currentQuery.toLowerCase()) !== -1) &&
+      (!advancedCity || String(e.city||'').toLowerCase().includes(advancedCity.toLowerCase())) &&
+      (!advancedDate || e.event_date === advancedDate) &&
+      (advancedPlace === 'Tous' || e.place === advancedPlace) &&
+      (!favoritesOnly || favoriteIds.has(e.id));
   });
   var count = document.getElementById('countLabel');
   var grid = document.getElementById('exploreGrid');
@@ -287,6 +299,37 @@ function closeGallery(){
 function doSearch() {
   currentQuery = document.getElementById('homeSearch').value;
   showExplore();
+}
+function resetAdvancedSearch(){
+  advancedCity=''; advancedDate=''; advancedPlace='Tous'; favoritesOnly=false;
+  renderExplore();
+}
+async function loadFavorites(){
+  favoriteIds = new Set();
+  if(!currentUser || !sb) return;
+  var r = await sb.from('event_favorites').select('event_id').eq('user_id',currentUser.id);
+  if(r.error){ console.error('Favoris:',r.error); return; }
+  (r.data||[]).forEach(function(x){ favoriteIds.add(x.event_id); });
+}
+async function toggleFavorite(eventId){
+  if(!currentUser){ openAuth('login'); return; }
+  if(!sb) return;
+  if(favoriteIds.has(eventId)){
+    var d=await sb.from('event_favorites').delete().eq('event_id',eventId).eq('user_id',currentUser.id);
+    if(d.error){toast('Impossible de retirer le favori.');return;}
+    favoriteIds.delete(eventId); toast('Retiré des favoris.');
+  }else{
+    var i=await sb.from('event_favorites').insert({event_id:eventId,user_id:currentUser.id});
+    if(i.error){toast('Impossible d’ajouter le favori.');return;}
+    favoriteIds.add(eventId); toast('Ajouté aux favoris ❤️');
+  }
+  if(document.getElementById('exploreGrid')) renderExplore();
+}
+async function showFavorites(){
+  if(!currentUser){openAuth('login');return;}
+  await loadFavorites();
+  var list=allEvents.filter(function(e){return favoriteIds.has(e.id);});
+  document.getElementById('app').innerHTML='<div class="wrap"><section class="section"><div class="section-head"><div><h2>❤️ Mes favoris</h2><div class="muted">Les sorties que tu veux garder de côté.</div></div><button class="primary" onclick="showExplore()">Explorer</button></div><div class="grid">'+(list.length?list.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Aucun favori pour le moment.<br>Explore les sorties et ajoute-les avec ❤️.</div>')+'</div></section></div>';
 }
 
 function openAuth(mode) {
@@ -410,6 +453,7 @@ async function showEvent(id) {
     '<p style="line-height:1.6;color:#5f5968">'+esc(e.description || 'Pas de description.')+'</p>' +
     '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
     '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
+    '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
     '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + button
   );
   var inviteBtn = document.getElementById('inviteBtn');
