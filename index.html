@@ -165,6 +165,7 @@ function updateAuthNav() {
 }
 
 function eventPhoto(event) {
+  if (event && event.image_url) return event.image_url;
   var map = {
     'Restaurant': 'photo-1.jpg',
     'Cinéma': 'photo-2.jpg',
@@ -743,12 +744,53 @@ function openCreate() {
     '<div class="two"><label>Ville<input id="city" value="Lille" required></label><label>Participants max<input id="max" type="number" min="2" value="10" required></label></div>' +
     '<div class="two"><label>Date<input id="date" type="date" min="'+new Date().toISOString().slice(0,10)+'" required></label><label>Heure<input id="time" type="time" required></label></div>' +
     '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
+    '<div class="card" style="padding:14px;background:#faf9fc">' +
+    '<strong>📸 Illustration de la sortie</strong>' +
+    '<div class="muted" style="font-size:12px;margin:5px 0 10px">Choisis ta photo ou laisse l’IA créer une illustration adaptée au titre, à la catégorie et au lieu.</div>' +
+    '<label style="display:block"><input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px"></label>' +
+    '<label style="display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px"><input id="generateAiImage" type="checkbox" style="width:auto;margin:0"> ✨ Générer automatiquement une illustration avec l’IA</label>' +
+    '</div>' +
     '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
   var createBtn = document.getElementById('createEventButton');
   if (createBtn) createBtn.onclick = function(ev) { createEvent(ev); };
   document.getElementById('place').onchange = function(ev) {
     document.getElementById('customWrap').style.display = ev.target.value === '__custom' ? 'block' : 'none';
   };
+}
+
+async function uploadEventImage(eventId, file) {
+  if (!currentUser || !sb || !file) return null;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    throw new Error('Format accepté : JPG, PNG ou WebP.');
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('L’image doit faire 5 Mo maximum.');
+  }
+  var ext = file.type === 'image/png' ? 'png' : (file.type === 'image/webp' ? 'webp' : 'jpg');
+  var path = currentUser.id + '/' + eventId + '-custom.' + ext;
+  var up = await sb.storage.from('event-images').upload(path, file, {
+    upsert: true,
+    contentType: file.type,
+    cacheControl: '31536000'
+  });
+  if (up.error) throw new Error('Upload impossible : ' + up.error.message);
+  var pub = sb.storage.from('event-images').getPublicUrl(path);
+  var url = pub.data && pub.data.publicUrl ? pub.data.publicUrl : null;
+  if (!url) throw new Error('Impossible de récupérer l’URL de l’image.');
+  var upd = await sb.from('events').update({image_url:url}).eq('id',eventId).eq('creator_id',currentUser.id);
+  if (upd.error) throw new Error('Impossible d’associer la photo à la sortie.');
+  return url;
+}
+
+async function generateAiEventImage(eventId) {
+  if (!sb || !currentUser) return null;
+  var result = await sb.functions.invoke('generate-event-image', {body:{event_id:eventId}});
+  if (result.error) {
+    var details = result.error.message || 'Génération IA indisponible.';
+    throw new Error(details);
+  }
+  if (result.data && result.data.error) throw new Error(result.data.error);
+  return result.data && result.data.image_url ? result.data.image_url : null;
 }
 
 async function createEvent(ev) {
@@ -777,7 +819,7 @@ async function createEvent(ev) {
   };
   var address=document.getElementById('locationAddress').value.trim();
   var coords=address ? await geocodePlace(address,payload.city) : null;
-  var r = await sb.from('events').insert({creator_id:currentUser.id,title:payload.title,description:payload.description,category:payload.category,place:payload.place,city:payload.city,event_date:payload.event_date,event_time:payload.event_time,price:0,max_participants:payload.max_participants,location_address:address||null,latitude:coords?coords.lat:null,longitude:coords?coords.lng:null}).select().single();
+  var r = await sb.from('events').insert({creator_id:currentUser.id,title:payload.title,description:payload.description,category:payload.category,place:payload.place,city:payload.city,event_date:payload.event_date,event_time:payload.event_time,price:0,max_participants:payload.max_participants,location_address:address||null,latitude:coords?coords.lat:null,longitude:coords?coords.lng:null,image_url:null}).select().single();
   if (r.error) {
     console.error('Création sortie:', r.error);
     toast('Impossible de créer la sortie : ' + (r.error.message || 'erreur Supabase'));
@@ -787,6 +829,23 @@ async function createEvent(ev) {
     toast('La sortie n’a pas pu être créée.');
     return;
   }
+
+  var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
+  var useAi = !!document.getElementById('generateAiImage')?.checked;
+
+  try {
+    if (imageFile) {
+      toast('Ajout de ta photo...');
+      await uploadEventImage(r.data.id, imageFile);
+    } else if (useAi) {
+      toast('✨ L’IA prépare l’illustration...');
+      await generateAiEventImage(r.data.id);
+    }
+  } catch (imageError) {
+    console.error('Image sortie:', imageError);
+    toast('Sortie créée, mais image non ajoutée : ' + (imageError.message || imageError));
+  }
+
   closeModal();
   await loadEvents();
   showExplore();
