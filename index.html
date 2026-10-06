@@ -529,12 +529,57 @@ async function createEvent(ev) {
 async function showProfile() {
   if (!currentUser || !sb) return;
   var p = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  var profile = p.data || {};
   var mine = allEvents.filter(function(e){return e.creator_id === currentUser.id;});
-  document.getElementById('app').innerHTML = '<div class="wrap"><section class="section"><span class="pill">MON ESPACE</span>' +
-    '<h2 style="margin:10px 0">'+esc((p.data && (p.data.full_name || p.data.username)) || 'Membre Team Paiya')+'</h2>' +
-    '<div class="muted">@'+esc((p.data && p.data.username) || 'membre')+'</div><div style="margin-top:20px" class="grid">' +
+  var joinedCount = 0;
+  if (sb) {
+    var jr = await sb.from('event_participants').select('event_id').eq('user_id',currentUser.id);
+    joinedCount = jr.error ? 0 : (jr.data || []).length;
+  }
+  var avatar = profile.avatar_url ? '<img src="'+esc(profile.avatar_url)+'" alt="Photo de profil" style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 8px 24px rgba(60,35,100,.15)">' : '<div style="width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-size:30px;font-weight:800">'+esc(((profile.full_name||profile.username||'A').charAt(0)).toUpperCase())+'</div>';
+  document.getElementById('app').innerHTML =
+    '<div class="wrap"><section class="section"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">' +
+    '<div style="display:flex;align-items:center;gap:18px">'+avatar+'<div><span class="pill">MON ESPACE</span><h2 style="margin:10px 0 3px">'+esc(profile.full_name || 'Membre Team Paiya')+'</h2><div class="muted">@'+esc(profile.username || 'membre')+' · '+esc(profile.city || 'Lille')+'</div></div></div>' +
+    '<button class="primary" onclick="editProfile()">✏️ Modifier mon profil</button></div>' +
+    '<div class="kpis" style="margin-top:24px"><div class="kpi"><strong>'+mine.length+'</strong><span>sortie(s) créée(s)</span></div><div class="kpi"><strong>'+joinedCount+'</strong><span>participation(s)</span></div><div class="kpi"><strong>'+esc(profile.city || 'Lille')+'</strong><span>ville</span></div></div>' +
+    '<div class="card" style="margin-top:24px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(profile.bio || 'Ajoute une petite bio pour te présenter à la Team Paiya.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(profile.interests || 'À compléter')+'</div></div></div>' +
+    '<section class="section"><div class="section-head"><div><h2>Mes sorties créées</h2></div><button class="primary" onclick="openCreate()">+ Créer</button></div><div class="grid">' +
     (mine.length ? mine.map(card).join('') : '<div class="empty" style="grid-column:1/-1">Tu n’as encore créé aucune sortie.</div>') +
-    '</div></section></div>';
+    '</div></section></section></div>';
+}
+
+function editProfile() {
+  if (!currentUser || !sb) return;
+  sb.from('profiles').select('*').eq('id',currentUser.id).single().then(function(r) {
+    var p = r.data || {};
+    openModal('<div class="modal-head"><div><h2 style="margin:0">Modifier mon profil</h2><div class="muted">Personnalise ton espace Team Paiya.</div></div><button class="close" onclick="closeModal()">×</button></div>' +
+      '<form class="form" onsubmit="event.preventDefault(); saveProfile()">' +
+      '<label>Nom complet<input id="profileName" required value="'+esc(p.full_name || '')+'" placeholder="Ex. Alseny Bangoura"></label>' +
+      '<label>Pseudo<input id="profileUsername" required value="'+esc(p.username || '')+'" placeholder="Ex. Alseny"></label>' +
+      '<label>Ville<input id="profileCity" value="'+esc(p.city || 'Lille')+'" placeholder="Lille"></label>' +
+      '<label>Photo de profil (URL)<input id="profileAvatar" value="'+esc(p.avatar_url || '')+'" placeholder="https://..."></label>' +
+      '<label>Bio<textarea id="profileBio" placeholder="Présente-toi en quelques mots...">'+esc(p.bio || '')+'</textarea></label>' +
+      '<label>Centres d’intérêt<textarea id="profileInterests" placeholder="Ex. Football, sorties, voyages...">'+esc(p.interests || '')+'</textarea></label>' +
+      '<button class="primary" type="submit">Enregistrer mon profil</button></form>');
+  });
+}
+
+async function saveProfile() {
+  if (!currentUser || !sb) return;
+  var payload = {
+    full_name: document.getElementById('profileName').value.trim(),
+    username: document.getElementById('profileUsername').value.trim(),
+    city: document.getElementById('profileCity').value.trim() || 'Lille',
+    avatar_url: document.getElementById('profileAvatar').value.trim() || null,
+    bio: document.getElementById('profileBio').value.trim(),
+    interests: document.getElementById('profileInterests').value.trim()
+  };
+  if (!payload.full_name || !payload.username) { toast('Le nom et le pseudo sont obligatoires.'); return; }
+  var r = await sb.from('profiles').update(payload).eq('id',currentUser.id);
+  if (r.error) { toast('Impossible de mettre à jour le profil : '+r.error.message); return; }
+  closeModal();
+  showProfile();
+  toast('Profil mis à jour ✨');
 }
 
 if (sb) {
