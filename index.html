@@ -510,16 +510,23 @@ async function viewProfile(userId) {
   var r = await sb.from('profiles').select('*').eq('id',userId).single();
   if (r.error || !r.data) { toast('Profil introuvable.'); return; }
   var p = r.data;
-  var created = allEvents.filter(function(e){return e.creator_id === userId;}).length;
+  var created = allEvents.filter(function(e){ return e.creator_id === userId; }).length;
   var jr = await sb.from('event_participants').select('event_id').eq('user_id',userId);
   var joined = jr.error ? 0 : (jr.data || []).length;
-  var avatar = p.avatar_url ? '<img src="'+esc(p.avatar_url)+'" style="width:92px;height:92px;border-radius:50%;object-fit:cover">' : '<div style="width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-size:34px;font-weight:800">'+esc(((p.full_name||p.username||'M').charAt(0)).toUpperCase())+'</div>';
-  openModal('<div class="modal-head"><div><span class="pill">👤 Profil</span></div><button class="close" onclick="closeModal()">×</button></div>' +
+  var avatar = p.avatar_url
+    ? '<img src="'+esc(p.avatar_url)+'" style="width:92px;height:92px;border-radius:50%;object-fit:cover">'
+    : '<div style="width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-size:34px;font-weight:800">'+esc(((p.full_name||p.username||'M').charAt(0)).toUpperCase())+'</div>';
+  var messageButton = currentUser.id !== userId ? '<button id="profileMessageBtn" class="primary" style="width:100%;margin-top:16px">💬 Envoyer un message</button>' : '';
+  openModal(
+    '<div class="modal-head"><div><span class="pill">👤 Profil</span></div><button class="close" onclick="closeModal()">×</button></div>' +
     '<div style="display:flex;gap:18px;align-items:center">'+avatar+'<div><h2 style="margin:0 0 5px">'+esc(p.full_name||'Membre Team Paiya')+'</h2><div class="muted">@'+esc(p.username||'membre')+' · '+esc(p.city||'Lille')+'</div></div></div>' +
     '<div class="kpis" style="margin-top:20px"><div class="kpi"><strong>'+created+'</strong><span>sortie(s) créée(s)</span></div><div class="kpi"><strong>'+joined+'</strong><span>participation(s)</span></div></div>' +
-    '<div class="card" style="margin-top:18px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(p.bio||'Pas encore de bio.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(p.interests||'Non renseignés')+'</div></div></div>' + (currentUser.id !== userId ? '<button class="primary" style="width:100%;margin-top:16px" onclick="startConversation(\''+userId+'\');closeModal()">💬 Envoyer un message</button>' : '');
+    '<div class="card" style="margin-top:18px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(p.bio||'Pas encore de bio.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(p.interests||'Non renseignés')+'</div></div></div>' +
+    messageButton
+  );
+  var btn = document.getElementById('profileMessageBtn');
+  if (btn) btn.onclick = function(){ closeModal(); startConversation(userId); };
 }
-
 var currentConversationId=null;var chatChannel=null;
 function profileAvatarSmall(p){if(p&&p.avatar_url)return '<img class="avatar-sm" src="'+esc(p.avatar_url)+'" alt="">';return '<div class="avatar-sm">'+esc(((p&&(p.full_name||p.username))||'M').charAt(0).toUpperCase())+'</div>';}
 function conversationOtherId(c){return c.user1_id===currentUser.id?c.user2_id:c.user1_id;}
