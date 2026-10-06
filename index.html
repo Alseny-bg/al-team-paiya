@@ -248,7 +248,7 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   <button onclick="closeMobileMenu();openCreate()">➕ Créer une sortie</button>
   <div class="mobile-menu-sep"></div>
   <div id="mobileAuthActions">
-    <button class="mobile-action" onclick="closeMobileMenu();openAuth('login')">🔐 Se connecter</button>
+    <button class="mobile-action" onclick="closeMobileMenu();openMobileLogin()">🔐 Se connecter</button>
     <button class="mobile-action primary" onclick="closeMobileMenu();openAuth('signup')">✨ S'inscrire</button>
   </div>
 </div></header>
@@ -1305,5 +1305,25 @@ function closeMobileMenu(){var m=document.getElementById('mobileMenu');if(m)m.cl
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initMobileMenu);else initMobileMenu();
 })();
+</script><script>
+function openMobileLogin(){
+  var m=document.getElementById('modal'),b=document.getElementById('modalBox');
+  if(!m||!b)return;
+  b.innerHTML='<div class="modal-head"><div><h2 style="margin:0">Bon retour 👋</h2><div class="muted">Connecte-toi à Team Paiya.</div></div><button type="button" class="close" onclick="closeModal()">×</button></div><form id="mobileLoginForm" class="form"><label>Email<input id="mobileLoginEmail" type="email" autocomplete="email" inputmode="email" required placeholder="ton@email.com"></label><label>Mot de passe<input id="mobileLoginPassword" type="password" autocomplete="current-password" required placeholder="Ton mot de passe"></label><button class="primary" type="submit">Se connecter</button><button type="button" class="ghost" onclick="closeModal();openAuth('signup')">Créer un compte</button></form>';
+  m.classList.add('show');
+  var f=document.getElementById('mobileLoginForm');
+  f.onsubmit=async function(e){
+    e.preventDefault();
+    var email=document.getElementById('mobileLoginEmail').value.trim();
+    var password=document.getElementById('mobileLoginPassword').value;
+    if(!window.supabase||!window.TEAM_PAIYA_CONFIG){alert('Le service de connexion n’est pas chargé.');return;}
+    var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
+    var btn=f.querySelector('button[type="submit"]'); btn.disabled=true; btn.textContent='Connexion…';
+    var r=await client.auth.signInWithPassword({email:email,password:password});
+    if(r.error){btn.disabled=false;btn.textContent='Se connecter';alert(r.error.message);return;}
+    closeModal();
+    location.reload();
+  };
+}
 </script></body>
 </html>
