@@ -375,7 +375,7 @@ async function joinEvent(id) {
 function openCreate() {
   if (!currentUser) { openAuth('login'); return; }
   openModal('<div class="modal-head"><div><h2 style="margin:0">Créer une sortie</h2><div class="muted">Propose un moment à la Team Paiya.</div></div><button class="close" onclick="closeModal()">×</button></div>' +
-    '<form class="form" onsubmit="createEvent(event)">' +
+    '<form id="createEventForm" class="form" onsubmit="event.preventDefault(); return false;">' +
     '<label>Nom de la sortie<input id="title" required placeholder="Ex. Soirée Footsal"></label>' +
     '<label>Catégorie<select id="category">'+categories.slice(1).map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></label>' +
     '<label>Lieu<select id="place">'+places.map(function(p){return '<option>'+esc(p)+'</option>';}).join('')+'<option value="__custom">Autre lieu...</option></select></label>' +
@@ -383,7 +383,9 @@ function openCreate() {
     '<div class="two"><label>Ville<input id="city" value="Lille" required></label><label>Participants max<input id="max" type="number" min="2" value="10" required></label></div>' +
     '<div class="two"><label>Date<input id="date" type="date" required></label><label>Heure<input id="time" type="time" required></label></div>' +
     '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
-    '<button class="primary" type="submit">Créer la sortie</button></form>');
+    '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
+  var createBtn = document.getElementById('createEventButton');
+  if (createBtn) createBtn.onclick = function(ev) { createEvent(ev); };
   document.getElementById('place').onchange = function(ev) {
     document.getElementById('customWrap').style.display = ev.target.value === '__custom' ? 'block' : 'none';
   };
