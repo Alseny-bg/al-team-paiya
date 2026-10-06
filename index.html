@@ -825,26 +825,23 @@ async function generatePuterEventImage(eventId, eventInfo) {
     'Description: ' + (eventInfo.description || '') + '.',
     'No text, no logos, no watermarks, no readable signs. Landscape composition suitable for a website card.'
   ].join(' ');
-  var img = await puter.ai.txt2img(prompt, {model:'black-forest-labs/flux-schnell'});
-  if (!img || !img.src) throw new Error('L’image IA n’a pas pu être générée.');
-  var response = await fetch(img.src);
-  if (!response.ok) throw new Error('Impossible de récupérer l’image IA.');
-  var blob = await response.blob();
-  var path = currentUser.id + '/' + eventId + '-ai.png';
-  var up = await sb.storage.from('event-images').upload(path, blob, {
-    upsert:true,
-    contentType:'image/png',
-    cacheControl:'31536000'
+
+  var img = await puter.ai.txt2img(prompt, {
+    model: 'black-forest-labs/flux-schnell',
+    ratio: {w:16,h:9}
   });
-  if (up.error) throw new Error('Impossible d’enregistrer l’image IA : ' + up.error.message);
-  var pub = sb.storage.from('event-images').getPublicUrl(path);
-  var url = pub.data && pub.data.publicUrl ? pub.data.publicUrl : null;
-  if (!url) throw new Error('Impossible de récupérer l’URL de l’image IA.');
-  var upd = await sb.from('events').update({image_url:url}).eq('id',eventId).eq('creator_id',currentUser.id);
-  if (upd.error) throw new Error('Impossible d’associer l’image IA à la sortie.');
+
+  if (!img || !img.src) throw new Error('L’image IA n’a pas pu être générée.');
+
+  var url = img.src;
+  var upd = await sb.from('events')
+    .update({image_url:url})
+    .eq('id',eventId)
+    .eq('creator_id',currentUser.id);
+
+  if (upd.error) throw new Error('Impossible d’associer l’image IA à la sortie : ' + upd.error.message);
   return url;
 }
-
 async function createEvent(ev) {
   ev.preventDefault();
   toast('Création de la sortie en cours...');
