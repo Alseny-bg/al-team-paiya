@@ -384,7 +384,40 @@ async function showEvent(id) {
     '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
     button
   );
+}async function openInviteMembers(eventId) {
+  if (!currentUser || !sb) { openAuth('login'); return; }
+  var ev = allEvents.find(function(x){ return String(x.id) === String(eventId); });
+  if (!ev || ev.creator_id !== currentUser.id) { toast('Seul le créateur peut inviter des membres.'); return; }
+  var pr = await sb.from('profiles').select('*').neq('id',currentUser.id).order('full_name',{ascending:true});
+  if (pr.error) { toast('Impossible de charger les membres.'); return; }
+  var pp = await sb.from('event_participants').select('user_id').eq('event_id',eventId);
+  var participantIds = (pp.data || []).map(function(x){ return x.user_id; });
+  var members = (pr.data || []).filter(function(p){ return participantIds.indexOf(p.id) === -1; });
+  var html = members.length ? members.map(function(p){
+    var avatar = p.avatar_url ? '<img src="'+esc(p.avatar_url)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover">' : '<div style="width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-weight:800">'+esc(((p.full_name||p.username||'M').charAt(0)).toUpperCase())+'</div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">'+avatar+'<div style="flex:1"><strong>'+esc(p.full_name||p.username||'Membre')+'</strong><div class="muted">@'+esc(p.username||'membre')+'</div></div><button class="ghost" data-event="'+eventId+'" data-user="'+p.id+'" onclick="sendEventInvitation(this.dataset.event,this.dataset.user)">Inviter</button></div>';
+  }).join('') : '<div class="empty">Tous les membres disponibles participent déjà à cette sortie.</div>';
+  openModal('<div class="modal-head"><div><span class="pill">🎟️ Invitation</span><h2 style="margin:10px 0 4px">Inviter des membres</h2><div class="muted">'+esc(ev.title)+'</div></div><button class="close" onclick="closeModal()">×</button></div><div style="margin-top:8px">'+html+'</div>');
 }
+async function sendEventInvitation(eventId, inviteeId) {
+  if (!currentUser || !sb) return;
+  var ev = allEvents.find(function(x){ return String(x.id) === String(eventId); });
+  if (!ev || ev.creator_id !== currentUser.id) return;
+  var r = await sb.from('event_invitations').insert({event_id:eventId,inviter_id:currentUser.id,invitee_id:inviteeId}).select('*').single();
+  if (r.error) { toast(r.error.code === '23505' ? 'Invitation déjà envoyée.' : r.error.message); return; }
+  await sb.from('notifications').insert({user_id:inviteeId,actor_id:currentUser.id,event_id:eventId,invitation_id:r.data.id,type:'invitation',message:'Tu as reçu une invitation pour « '+ev.title+' » 🎉'});
+  toast('Invitation envoyée !');
+  closeModal();
+}
+async function respondInvitation(invitationId,status) {
+  if (!currentUser || !sb) return;
+  var r = await sb.rpc('respond_event_invitation',{p_invitation_id:invitationId,p_status:status});
+  if (r.error) { toast(r.error.message); return; }
+  toast(status === 'accepted' ? 'Invitation acceptée 🎉' : 'Invitation refusée.');
+  showNotifications();
+  loadEvents();
+}
+
 async function joinEvent(id) {
   if (!currentUser) { closeModal(); openAuth('login'); return; }
   if (!sb) return;
