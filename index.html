@@ -737,7 +737,7 @@ async function startConversation(userId){if(!currentUser){openAuth('login');retu
 function openCreate() {
   if (!currentUser) { openAuth('login'); return; }
   openModal('<div class="modal-head"><div><h2 style="margin:0">Créer une sortie</h2><div class="muted">Propose un moment à la Team Paiya.</div></div><button class="close" onclick="closeModal()">×</button></div>' +
-    '<form id="createEventForm" class="form" onsubmit="event.preventDefault(); return false;">' +
+    '<form id="createEventForm" class="form" onsubmit="createEvent(event); return false;">' +
     '<label>Nom de la sortie<input id="title" required placeholder="Ex. Soirée Footsal"></label>' +
     '<label>Catégorie<select id="category">'+categories.slice(1).map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></label>' +
     '<label>Lieu<select id="place">'+places.map(function(p){return '<option>'+esc(p)+'</option>';}).join('')+'<option value="__custom">Autre lieu...</option></select></label>' +
@@ -753,7 +753,7 @@ function openCreate() {
     '<button id="removeEventImageBtn" class="ghost" type="button" style="display:none;margin-top:10px">✕ Retirer la photo</button>' +
     '<div id="aiImageStatus" class="muted" style="font-size:12px;margin-top:8px">✨ Sans photo, une illustration IA sera générée automatiquement.</div>' +
     '</div>' +
-    '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
+    '<button id="createEventButton" class="primary" type="submit">Créer la sortie</button></form>');
   var fileInput = document.getElementById('eventImageFile');
   var preview = document.getElementById('eventImagePreview');
   var previewImg = document.getElementById('eventImagePreviewImg');
@@ -782,7 +782,6 @@ function openCreate() {
   };
 
   var createBtn = document.getElementById('createEventButton');
-  if (createBtn) createBtn.onclick = function(ev) { createEvent(ev); };
   document.getElementById('place').onchange = function(ev) {
     document.getElementById('customWrap').style.display = ev.target.value === '__custom' ? 'block' : 'none';
   };
