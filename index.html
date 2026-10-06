@@ -215,7 +215,7 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 <body>
 <header><div class="wrap nav">
   <div class="brand"><div class="logo">AL</div><span>AL Team Paiya</span></div>
-  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu">☰</button>
+  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu" onclick="toggleMobileMenu()">☰</button>
   <div class="navlinks">
     <button onclick="showHome()">Accueil</button><button onclick="showExplore()">Explorer</button><button onclick="openCreate()">Créer une sortie</button>
   </div>
@@ -253,7 +253,7 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
-<script src="app.js"></script>
+<script src="app.js?v=20261007-2"></script>
 
 </script>
 <script>
@@ -270,5 +270,15 @@ document.addEventListener('click',function(e){
   var b=document.getElementById('mobileMenuBtn');
   if(m&&m.classList.contains('show')&&!m.contains(e.target)&&e.target!==b)m.classList.remove('show');
 });
-</script></body>
+</script><script>
+(function(){
+  window.toggleMobileMenu=function(){var m=document.getElementById("mobileMenu");if(m){m.classList.toggle("show");}};
+  window.closeMobileMenu=function(){var m=document.getElementById("mobileMenu");if(m)m.classList.remove("show");};
+  document.addEventListener("click",function(e){
+    var m=document.getElementById("mobileMenu"),b=document.getElementById("mobileMenuBtn");
+    if(m&&m.classList.contains("show")&&!m.contains(e.target)&&e.target!==b)m.classList.remove("show");
+  });
+})();
+</script>
+</body>
 </html>
