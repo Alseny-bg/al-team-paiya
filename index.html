@@ -124,6 +124,31 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   .section-head > button{width:100%}
   .modal-box{padding:15px}
 }
+
+/* EVENT DETAIL */
+.event-detail{margin:-18px}
+.event-detail-cover{height:245px;position:relative;overflow:hidden;background:#ede9fe}
+.event-detail-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.event-detail-gradient{position:absolute;inset:0;background:linear-gradient(180deg,#0002 15%,transparent 45%,#17132199 100%)}
+.event-detail-pill{position:absolute;left:18px;bottom:16px;background:#fff;color:#4c1d95;padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px;z-index:2}
+.event-detail-close{position:absolute;right:14px;top:14px;background:#fff;z-index:3}
+.event-detail-content{padding:22px}
+.event-detail-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.event-fav-btn{font-size:22px;min-width:48px}
+.event-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.event-info-grid>div{background:#f8f6fb;border:1px solid var(--line);border-radius:13px;padding:12px}
+.event-info-grid strong{display:block;font-size:12px;margin-bottom:5px}
+.event-info-grid span{font-size:13px;color:#5f5968}
+@media(max-width:700px){
+  .event-detail{margin:-15px}
+  .event-detail-cover{height:190px}
+  .event-detail-content{padding:16px}
+  .event-info-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .event-detail-cover{height:170px}
+  .event-info-grid{grid-template-columns:1fr}
+}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script></head>
 <body>
@@ -480,6 +505,7 @@ async function loadEvents() {
 async function showEvent(id) {
   var e = allEvents.find(function(x){ return String(x.id) === String(id); });
   if (!e) return;
+
   var participants = [];
   var joined = false;
   if (sb) {
@@ -494,6 +520,7 @@ async function showEvent(id) {
     }
     if (currentUser) joined = ids.indexOf(currentUser.id) !== -1;
   }
+
   var reviews = [];
   var averageRating = 0;
   var myReview = null;
@@ -505,52 +532,79 @@ async function showEvent(id) {
       if (currentUser) myReview = reviews.find(function(r){ return r.reviewer_id === currentUser.id; }) || null;
     }
   }
+
   var eventDateTime = new Date(e.event_date + 'T' + (e.event_time || '00:00'));
   var isPast = eventDateTime.getTime() < Date.now();
   var canReview = currentUser && (joined || e.creator_id === currentUser.id) && isPast;
   var reviewButton = canReview ?
-    '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\''+id+'\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
+    '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\\''+id+'\\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
+
   var reviewsHtml = reviews.length ?
     reviews.map(function(r){
       var rp=r.profiles||{};
       var stars='★★★★★'.slice(0,Number(r.rating||0))+'☆☆☆☆☆'.slice(0,5-Number(r.rating||0));
       return '<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:10px"><strong>'+esc(rp.full_name||rp.username||'Membre')+'</strong><span>'+stars+'</span></div><div class="muted" style="font-size:12px;margin-top:4px">'+dateLabel(r.created_at.slice(0,10),r.created_at.slice(11,16))+'</div><div style="margin-top:7px;color:#5f5968;white-space:pre-wrap">'+esc(r.comment||'')+'</div></div>';
     }).join('') : '<div class="muted">Pas encore d’avis.</div>';
-  var ratingHtml = reviews.length ? '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">⭐ Avis</h3><div class="muted">'+reviews.length+' avis</div></div><strong style="font-size:24px"> '+averageRating.toFixed(1)+' / 5</strong></div><div style="margin-top:10px;font-size:18px">★★★★★</div><div style="margin-top:8px">'+reviewsHtml+'</div></div></div>' :
+
+  var ratingHtml = reviews.length ?
+    '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h3 style="margin:0">⭐ Avis</h3><div class="muted">'+reviews.length+' avis</div></div><strong style="font-size:24px">'+averageRating.toFixed(1)+' / 5</strong></div><div style="margin-top:10px;font-size:18px">★★★★★</div><div style="margin-top:8px">'+reviewsHtml+'</div></div></div>' :
     '<div class="card" style="margin-top:18px"><div class="body"><h3>⭐ Avis</h3><div class="muted">Aucun avis pour le moment.</div></div></div>';
 
   var button = currentUser ?
     (joined ? '<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>' :
     (e.count >= e.max_participants ? '<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>' :
-    '<button class="primary" style="width:100%;margin-top:18px" onclick="joinEvent(\''+id+'\')">Rejoindre la sortie</button>')) :
-    '<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\'login\')">Connecte-toi pour rejoindre</button>';
+    '<button class="primary" style="width:100%;margin-top:18px" onclick="joinEvent(\\''+id+'\\')">Rejoindre la sortie</button>')) :
+    '<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\\'login\\')">Connecte-toi pour rejoindre</button>';
 
   var participantHtml = participants.length ? participants.map(function(p){
     var prof = p.profiles || {};
     var name = prof.full_name || prof.username || 'Membre Team Paiya';
     var avatar = prof.avatar_url
-      ? '<img src="'+esc(prof.avatar_url)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover">'
-      : '<div style="width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-weight:800">'+esc(name.charAt(0).toUpperCase())+'</div>';
+      ? '<img src="'+esc(prof.avatar_url)+'" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover">'
+      : '<div style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-weight:800">'+esc(name.charAt(0).toUpperCase())+'</div>';
     var message = currentUser && currentUser.id !== p.user_id
-      ? '<button class="ghost" style="font-size:12px;padding:7px 10px" onclick="startConversation(\''+p.user_id+'\');closeModal()">💬 Message</button>'
+      ? '<button class="ghost" style="font-size:12px;padding:7px 10px" onclick="startConversation(\\''+p.user_id+'\\');closeModal()">💬</button>'
       : '';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">' +
-      '<button type="button" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left;background:none;border:0;cursor:pointer;padding:0" onclick="viewProfile(\''+p.user_id+'\')">' +
-      avatar + '<div><strong>'+esc(name)+'</strong><div class="muted" style="font-size:12px">Voir le profil</div></div></button>' + message + '</div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><button type="button" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left;background:none;border:0;cursor:pointer;padding:0" onclick="viewProfile(\\''+p.user_id+'\\')">'+avatar+'<div><strong>'+esc(name)+'</strong><div class="muted" style="font-size:12px">Voir le profil</div></div></button>'+message+'</div>';
   }).join('') : '<span class="muted">Sois le premier à rejoindre !</span>';
 
+  var photo = eventPhoto(e);
+  var mapBlock = (e.latitude && e.longitude) || e.location_address
+    ? '<div class="card event-location-card" style="margin-top:18px"><div class="body"><h3 style="margin-top:0">📍 Localisation</h3><div class="muted" style="margin-bottom:10px">'+esc(e.location_address || (e.place+' · '+e.city))+'</div><div id="eventMap" style="height:220px;border-radius:14px;overflow:hidden"></div></div></div>'
+    : '';
+
   openModal(
-    '<div class="modal-head"><div><span class="pill">'+emoji(e.category)+' '+esc(e.category)+'</span><h2 style="margin:10px 0 4px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="close" onclick="closeModal()">×</button></div>' +
-    '<p style="line-height:1.6;color:#5f5968">'+esc(e.description || 'Pas de description.')+'</p>' +
-    '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
-    '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
-    '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
-    '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + reviewButton + button + ratingHtml
+    '<div class="event-detail">' +
+      '<div class="event-detail-cover"><img src="'+esc(photo)+'" alt="'+esc(e.title)+'"><div class="event-detail-gradient"></div><span class="event-detail-pill">'+emoji(e.category)+' '+esc(e.category)+'</span><button class="close event-detail-close" onclick="closeModal()">×</button></div>' +
+      '<div class="event-detail-content">' +
+        '<div class="event-detail-title-row"><div><h2 style="margin:0 0 6px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="ghost event-fav-btn" onclick="toggleFavorite(\\''+id+'\\');setTimeout(function(){showEvent(\\''+id+'\\')},250)">'+(favoriteIds.has(e.id)?'❤️':'♡')+'</button></div>' +
+        '<p style="line-height:1.65;color:#5f5968;margin:16px 0">'+esc(e.description || 'Pas de description.')+'</p>' +
+        '<div class="event-info-grid"><div><strong>📅 Date</strong><span>'+dateLabel(e.event_date,e.event_time)+'</span></div><div><strong>👥 Participants</strong><span>'+e.count+'/'+e.max_participants+'</span></div><div><strong>💜 Tarif</strong><span>Gratuit</span></div><div><strong>📍 Lieu</strong><span>'+esc(e.place)+'</span></div></div>' +
+        mapBlock +
+        '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">👥 Participants</h3><span class="pill">'+e.count+'/'+e.max_participants+'</span></div><div style="margin-top:8px">'+participantHtml+'</div></div></div>' +
+        '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\\''+id+'\\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
+        '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + reviewButton + button + ratingHtml +
+      '</div>' +
+    '</div>'
   );
+
   var inviteBtn = document.getElementById('inviteBtn');
   if (inviteBtn && (!currentUser || e.creator_id !== currentUser.id)) inviteBtn.style.display='none';
   if (inviteBtn) inviteBtn.onclick=function(){ openInviteMembers(id); };
-}async function openInviteMembers(eventId) {
+
+  // Carte de la sortie : utilise les coordonnées enregistrées, sinon géocode l'adresse en arrière-plan.
+  if (document.getElementById('eventMap') && typeof L !== 'undefined') {
+    setTimeout(async function(){
+      var pos = (e.latitude && e.longitude) ? {lat:Number(e.latitude),lng:Number(e.longitude)} : await geocodePlace(e.location_address || e.place,e.city);
+      if (!pos || !document.getElementById('eventMap')) return;
+      var map = L.map('eventMap',{scrollWheelZoom:false}).setView([pos.lat,pos.lng],15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+      L.marker([pos.lat,pos.lng]).addTo(map).bindPopup('<strong>'+esc(e.title)+'</strong><br>'+esc(e.place)+' · '+esc(e.city)).openPopup();
+      setTimeout(function(){map.invalidateSize();},150);
+    },100);
+  }
+}
+async function openInviteMembers(eventId) {
   if (!currentUser || !sb) { openAuth('login'); return; }
   var ev = allEvents.find(function(x){ return String(x.id) === String(eventId); });
   if (!ev || ev.creator_id !== currentUser.id) { toast('Seul le créateur peut inviter des membres.'); return; }
