@@ -888,10 +888,8 @@ async function createEvent(ev) {
     event_time:document.getElementById('time').value,price:0,max_participants:Number(document.getElementById('max').value)
   };
   var address=document.getElementById('locationAddress').value.trim();
-  // Capture la photo avant de fermer la modale.
-  var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
-  // La géolocalisation ne doit jamais bloquer la création de la sortie.
-  var r = await sb.from('events').insert({creator_id:currentUser.id,title:payload.title,description:payload.description,category:payload.category,place:payload.place,city:payload.city,event_date:payload.event_date,event_time:payload.event_time,price:0,max_participants:payload.max_participants,location_address:address||null,latitude:null,longitude:null,image_url:null}).select().single();
+  var coords=address ? await geocodePlace(address,payload.city) : null;
+  var r = await sb.from('events').insert({creator_id:currentUser.id,title:payload.title,description:payload.description,category:payload.category,place:payload.place,city:payload.city,event_date:payload.event_date,event_time:payload.event_time,price:0,max_participants:payload.max_participants,location_address:address||null,latitude:coords?coords.lat:null,longitude:coords?coords.lng:null,image_url:null}).select().single();
   if (r.error) {
     console.error('Création sortie:', r.error);
     creatingEvent = false;
@@ -907,10 +905,11 @@ async function createEvent(ev) {
   // La sortie est déjà enregistrée : on ferme immédiatement le formulaire
   // pour éviter que l’utilisateur pense que le clic n’a pas fonctionné.
   closeModal();
-  creatingEvent = false;
   await loadEvents();
   showExplore();
-  toast('🎉 Sortie créée ! Génération de l’image en arrière-plan…');
+  toast('Sortie créée 🎉 Génération de l’image en cours…');
+
+  var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
 
   try {
     if (imageFile) {
