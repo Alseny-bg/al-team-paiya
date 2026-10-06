@@ -391,7 +391,11 @@ function openCreate() {
 
 async function createEvent(ev) {
   ev.preventDefault();
-  if (!sb || !currentUser) return;
+  toast('Création de la sortie en cours...');
+  console.log('createEvent lancé', {sb:!!sb, currentUser:!!currentUser});
+  if (!sb) { toast('Erreur : Supabase n’est pas connecté.'); return; }
+  if (!currentUser) { toast('Erreur : tu dois être connecté.'); return; }
+  try {
   var place = document.getElementById('place').value;
   if (place === '__custom') place = document.getElementById('customPlace').value.trim();
   if (!place) return;
@@ -425,6 +429,10 @@ async function createEvent(ev) {
   await loadEvents();
   showExplore();
   toast('Sortie créée 🎉');
+  } catch (e) {
+    console.error('createEvent exception:', e);
+    toast('Erreur inattendue : ' + (e.message || e));
+  }
 }
 
 async function showProfile() {
