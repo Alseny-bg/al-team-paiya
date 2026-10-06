@@ -152,6 +152,23 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 /* JOIN FLOW */
 .join-confirm{padding:18px;border-radius:16px;background:#f8f6fb;border:1px solid var(--line)}
+
+/* MOBILE INTERACTION FIX */
+@media (max-width:700px){
+  html,body{width:100%;min-height:100%;overflow-x:hidden}
+  body{touch-action:pan-y}
+  button,a,input,select,textarea{touch-action:manipulation}
+  header{position:sticky;top:0;z-index:1000}
+  .nav{position:relative;z-index:1001;width:100%;overflow:visible}
+  .navlinks,#authNav{position:relative;z-index:1002}
+  .navlinks button,#authNav button{position:relative;z-index:1003;pointer-events:auto}
+  #app{position:relative;z-index:1}
+  .modal{z-index:5000;pointer-events:none}
+  .modal.show{pointer-events:auto}
+  .modal-box{position:relative;z-index:5001;pointer-events:auto}
+  .modal-box button,.modal-box input,.modal-box select,.modal-box textarea{pointer-events:auto}
+  .toast{z-index:6000;pointer-events:none}
+}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script></head>
 <body>
