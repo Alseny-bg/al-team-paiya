@@ -341,26 +341,50 @@ async function loadEvents() {
 }
 
 async function showEvent(id) {
-  var e = allEvents.find(function(x){return String(x.id) === String(id);});
+  var e = allEvents.find(function(x){ return String(x.id) === String(id); });
   if (!e) return;
   var participants = [];
   var joined = false;
   if (sb) {
-    var p = await sb.from('event_participants').select('user_id, profiles(username,full_name)').eq('event_id',id);
-    participants = p.data || [];
-    if (currentUser) joined = participants.some(function(x){return x.user_id === currentUser.id;});
+    var p = await sb.from('event_participants').select('user_id').eq('event_id',id);
+    var rows = p.data || [];
+    var ids = rows.map(function(x){ return x.user_id; });
+    if (ids.length) {
+      var pr = await sb.from('profiles').select('*').in('id',ids);
+      var profileMap = {};
+      (pr.data || []).forEach(function(x){ profileMap[x.id] = x; });
+      participants = rows.map(function(x){ return {user_id:x.user_id, profiles:profileMap[x.user_id] || {}}; });
+    }
+    if (currentUser) joined = ids.indexOf(currentUser.id) !== -1;
   }
   var button = currentUser ?
     (joined ? '<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>' :
     (e.count >= e.max_participants ? '<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>' :
     '<button class="primary" style="width:100%;margin-top:18px" onclick="joinEvent(\''+id+'\')">Rejoindre la sortie</button>')) :
     '<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\'login\')">Connecte-toi pour rejoindre</button>';
-  openModal('<div class="modal-head"><div><span class="pill">'+emoji(e.category)+' '+esc(e.category)+'</span><h2 style="margin:10px 0 4px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="close" onclick="closeModal()">×</button></div>' +
+
+  var participantHtml = participants.length ? participants.map(function(p){
+    var prof = p.profiles || {};
+    var name = prof.full_name || prof.username || 'Membre Team Paiya';
+    var avatar = prof.avatar_url
+      ? '<img src="'+esc(prof.avatar_url)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover">'
+      : '<div style="width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-weight:800">'+esc(name.charAt(0).toUpperCase())+'</div>';
+    var message = currentUser && currentUser.id !== p.user_id
+      ? '<button class="ghost" style="font-size:12px;padding:7px 10px" onclick="startConversation(\''+p.user_id+'\');closeModal()">💬 Message</button>'
+      : '';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">' +
+      '<button type="button" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left;background:none;border:0;cursor:pointer;padding:0" onclick="viewProfile(\''+p.user_id+'\')">' +
+      avatar + '<div><strong>'+esc(name)+'</strong><div class="muted" style="font-size:12px">Voir le profil</div></div></button>' + message + '</div>';
+  }).join('') : '<span class="muted">Sois le premier à rejoindre !</span>';
+
+  openModal(
+    '<div class="modal-head"><div><span class="pill">'+emoji(e.category)+' '+esc(e.category)+'</span><h2 style="margin:10px 0 4px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="close" onclick="closeModal()">×</button></div>' +
     '<p style="line-height:1.6;color:#5f5968">'+esc(e.description || 'Pas de description.')+'</p>' +
     '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
-    '<h3>Participants</h3><div>' + (participants.length ? participants.map(function(p){var prof=p.profiles||{};return '<button class="pill" style="margin:3px;cursor:pointer;border:0" onclick="viewProfile(\''+p.user_id+'\')">'+(prof.avatar_url ? '<img src="'+esc(prof.avatar_url)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">' : '')+esc(prof.full_name||prof.username||'Membre')+'</button>';}).join('') : '<span class="muted">Sois le premier à rejoindre !</span>') + '</div>' + button);
+    '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
+    button
+  );
 }
-
 async function joinEvent(id) {
   if (!currentUser) { closeModal(); openAuth('login'); return; }
   if (!sb) return;
