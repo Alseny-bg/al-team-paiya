@@ -170,7 +170,14 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   .toast{z-index:6000;pointer-events:none}
 }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script></head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script><style>
+@media(max-width:700px){
+  header{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .nav{position:relative!important}
+  .modal{isolation:isolate}
+  button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+}
+</style></head>
 <body>
 <header><div class="wrap nav">
   <div class="brand"><div class="logo">AL</div>AL Team Paiya</div>
@@ -1155,5 +1162,39 @@ if (sb) {
 }
 
 </script>
-</body>
+<script>
+/* MOBILE FALLBACK INTERACTION */
+(function(){
+  function callIf(name,args){
+    try{ if(typeof window[name]==='function'){ window[name].apply(window,args||[]); return true; } }catch(e){ console.error(e); }
+    return false;
+  }
+  function bind(){
+    document.addEventListener('click',function(e){
+      var b=e.target.closest && e.target.closest('button');
+      if(!b) return;
+      if(b.disabled) return;
+      var txt=(b.textContent||'').trim();
+      if(txt==='Se connecter' && !callIf('openAuth',['login'])){
+        var m=document.getElementById('modal');
+        var box=document.getElementById('modalBox');
+        if(m&&box){
+          box.innerHTML='<div class="modal-head"><h2>Bon retour 👋</h2><button class="close" type="button" onclick="document.getElementById(\'modal\').classList.remove(\'show\')">×</button></div><form id="mobileLoginFallback" class="form"><label>Email<input id="mobileLoginEmail" type="email" autocomplete="email" required></label><label>Mot de passe<input id="mobileLoginPassword" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Se connecter</button></form>';
+          m.classList.add('show');
+          var f=document.getElementById('mobileLoginFallback');
+          f.onsubmit=async function(ev){
+            ev.preventDefault();
+            if(!window.supabase||!window.TEAM_PAIYA_CONFIG){alert('Connexion indisponible.');return;}
+            var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
+            var r=await client.auth.signInWithPassword({email:document.getElementById('mobileLoginEmail').value.trim(),password:document.getElementById('mobileLoginPassword').value});
+            if(r.error){alert(r.error.message);return;}
+            location.reload();
+          };
+        }
+      }
+    },true);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script></body>
 </html>
