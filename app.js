@@ -355,7 +355,7 @@ async function showEvent(id) {
   var isPast = eventDateTime.getTime() < Date.now();
   var canReview = currentUser && (joined || e.creator_id === currentUser.id) && isPast;
   var reviewButton = canReview ?
-    '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\\''+id+'\\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
+    '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\''+id+'\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
 
   var reviewsHtml = reviews.length ?
     reviews.map(function(r){
@@ -371,8 +371,8 @@ async function showEvent(id) {
   var button = currentUser ?
     (joined ? '<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>' :
     (e.count >= e.max_participants ? '<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>' :
-    '<button class="primary" style="width:100%;margin-top:18px" onclick="joinEvent(\\''+id+'\\')">Rejoindre la sortie</button>')) :
-    '<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\\'login\\')">Connecte-toi pour rejoindre</button>';
+    '<button class="primary" style="width:100%;margin-top:18px" onclick="joinEvent(\''+id+'\')">Rejoindre la sortie</button>')) :
+    '<button class="primary" style="width:100%;margin-top:18px" onclick="closeModal();openAuth(\'login\')">Connecte-toi pour rejoindre</button>';
 
   var participantHtml = participants.length ? participants.map(function(p){
     var prof = p.profiles || {};
@@ -381,9 +381,9 @@ async function showEvent(id) {
       ? '<img src="'+esc(prof.avatar_url)+'" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover">'
       : '<div style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-weight:800">'+esc(name.charAt(0).toUpperCase())+'</div>';
     var message = currentUser && currentUser.id !== p.user_id
-      ? '<button class="ghost" style="font-size:12px;padding:7px 10px" onclick="startConversation(\\''+p.user_id+'\\');closeModal()">💬</button>'
+      ? '<button class="ghost" style="font-size:12px;padding:7px 10px" onclick="startConversation(\''+p.user_id+'\');closeModal()">💬</button>'
       : '';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><button type="button" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left;background:none;border:0;cursor:pointer;padding:0" onclick="viewProfile(\\''+p.user_id+'\\')">'+avatar+'<div><strong>'+esc(name)+'</strong><div class="muted" style="font-size:12px">Voir le profil</div></div></button>'+message+'</div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><button type="button" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left;background:none;border:0;cursor:pointer;padding:0" onclick="viewProfile(\''+p.user_id+'\')">'+avatar+'<div><strong>'+esc(name)+'</strong><div class="muted" style="font-size:12px">Voir le profil</div></div></button>'+message+'</div>';
   }).join('') : '<span class="muted">Sois le premier à rejoindre !</span>';
 
   var photo = eventPhoto(e);
@@ -395,12 +395,12 @@ async function showEvent(id) {
     '<div class="event-detail">' +
       '<div class="event-detail-cover"><img src="'+esc(photo)+'" alt="'+esc(e.title)+'"><div class="event-detail-gradient"></div><span class="event-detail-pill">'+emoji(e.category)+' '+esc(e.category)+'</span><button class="close event-detail-close" onclick="closeModal()">×</button></div>' +
       '<div class="event-detail-content">' +
-        '<div class="event-detail-title-row"><div><h2 style="margin:0 0 6px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="ghost event-fav-btn" onclick="toggleFavorite(\\''+id+'\\');setTimeout(function(){showEvent(\\''+id+'\\')},250)">'+(favoriteIds.has(e.id)?'❤️':'♡')+'</button></div>' +
+        '<div class="event-detail-title-row"><div><h2 style="margin:0 0 6px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="ghost event-fav-btn" onclick="toggleFavorite(\''+id+'\');setTimeout(function(){showEvent(\''+id+'\')},250)">'+(favoriteIds.has(e.id)?'❤️':'♡')+'</button></div>' +
         '<p style="line-height:1.65;color:#5f5968;margin:16px 0">'+esc(e.description || 'Pas de description.')+'</p>' +
         '<div class="event-info-grid"><div><strong>📅 Date</strong><span>'+dateLabel(e.event_date,e.event_time)+'</span></div><div><strong>👥 Participants</strong><span>'+e.count+'/'+e.max_participants+'</span></div><div><strong>💜 Tarif</strong><span>Gratuit</span></div><div><strong>📍 Lieu</strong><span>'+esc(e.place)+'</span></div></div>' +
         mapBlock +
         '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">👥 Participants</h3><span class="pill">'+e.count+'/'+e.max_participants+'</span></div><div style="margin-top:8px">'+participantHtml+'</div></div></div>' +
-        '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\\''+id+'\\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
+        '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
         '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + reviewButton + button + ratingHtml +
       '</div>' +
     '</div>'
@@ -485,7 +485,7 @@ async function joinEvent(id) {
   if (ev.creator_id === currentUser.id) { toast('Tu es déjà le créateur de cette sortie.'); return; }
   if (ev.count >= ev.max_participants) { toast('Cette sortie est complète.'); return; }
 
-  var joinBtn = document.querySelector('[onclick*="joinEvent(\\''+id+'\\'"]');
+  var joinBtn = document.querySelector('[onclick*="joinEvent(\''+id+'\'"]');
   if (joinBtn) {
     joinBtn.disabled = true;
     joinBtn.textContent = 'Participation…';
