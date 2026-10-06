@@ -153,7 +153,7 @@ function updateAuthNav() {
   var nav = document.getElementById('authNav');
   if (!nav) return;
   if (currentUser) {
-    nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="showNotifications()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
+    nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="openNotificationCenter()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
   } else {
     nav.innerHTML = '<button class="ghost" onclick="openAuth(\'login\')">Se connecter</button><button class="primary" onclick="openAuth(\'signup\')">S\'inscrire</button>';
   }
@@ -543,6 +543,23 @@ async function refreshNotificationBadge() {
   badge.textContent = n ? '('+n+')' : '';
   badge.style.display = n ? 'inline' : 'none';
 }
+async function openNotificationCenter() {
+  if (!currentUser || !sb) { openAuth('login'); return; }
+  var r = await sb.from('notifications').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
+  if (r.error) { toast('Impossible de charger les notifications.'); return; }
+  var list = r.data || [];
+  var html = list.length ? list.map(function(n) {
+    var actions = '';
+    if (n.type === 'invitation' && n.invitation_id) {
+      actions = '<div style="display:flex;gap:8px;margin-top:10px"><button class="primary" data-inv="'+n.invitation_id+'" data-status="accepted" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">✓ Accepter</button><button class="ghost" data-inv="'+n.invitation_id+'" data-status="declined" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">Refuser</button></div>';
+    }
+    return '<div style="padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-weight:700">'+esc(n.message)+'</div><div class="muted" style="font-size:12px;margin-top:4px">'+dateLabel(n.created_at.slice(0,10),n.created_at.slice(11,16))+'</div>'+actions+'</div>';
+  }).join('') : '<div class="empty">Aucune notification.</div>';
+  openModal('<div class="modal-head"><div><span class="pill">🔔 Notifications</span><h2 style="margin:10px 0 0">Tes notifications</h2></div><button class="close" onclick="closeModal()">×</button></div><div style="max-height:60vh;overflow:auto">'+html+'</div>');
+  await sb.from('notifications').update({read:true}).eq('user_id',currentUser.id).eq('read',false);
+  refreshNotificationBadge();
+}
+
 async function showNotifications() {
   if (!currentUser || !sb) { openAuth('login'); return; }
   var r = await sb.from('notifications').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
