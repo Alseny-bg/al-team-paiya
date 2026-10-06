@@ -152,105 +152,83 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 /* JOIN FLOW */
 .join-confirm{padding:18px;border-radius:16px;background:#f8f6fb;border:1px solid var(--line)}
-
-/* MOBILE INTERACTION FIX */
-@media (max-width:700px){
-  html,body{width:100%;min-height:100%;overflow-x:hidden}
-  body{touch-action:pan-y}
-  button,a,input,select,textarea{touch-action:manipulation}
-  header{position:sticky;top:0;z-index:1000}
-  .nav{position:relative;z-index:1001;width:100%;overflow:visible}
-  .navlinks,#authNav{position:relative;z-index:1002}
-  .navlinks button,#authNav button{position:relative;z-index:1003;pointer-events:auto}
-  #app{position:relative;z-index:1}
-  .modal{z-index:5000;pointer-events:none}
-  .modal.show{pointer-events:auto}
-  .modal-box{position:relative;z-index:5001;pointer-events:auto}
-  .modal-box button,.modal-box input,.modal-box select,.modal-box textarea{pointer-events:auto}
-  .toast{z-index:6000;pointer-events:none}
-}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script><style>
-@media(max-width:700px){
-  html,body{overflow-x:hidden}
-  header{position:relative!important;z-index:99999!important;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:auto!important}
-  header *{pointer-events:auto!important}
-  .nav{position:relative!important;z-index:100000!important}
-  #authNav{position:relative!important;z-index:100001!important}
-  #authNav button{position:relative!important;z-index:100002!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
-  .modal{isolation:isolate}
-  button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-}
-</style><style>
 .mobile-menu-btn,.mobile-menu{display:none}
 @media(max-width:700px){
-  .wrap{padding:0 18px}
-  header{position:sticky!important;top:0!important;z-index:9999!important}
-  .nav{height:68px;min-height:68px!important;padding:8px 0!important;display:flex;align-items:center}
-  .brand{font-size:18px!important;gap:9px;min-width:0}
+  *{box-sizing:border-box}
+  .wrap{padding:0 16px}
+  header{position:sticky!important;top:0!important;z-index:1000}
+  .nav{height:68px;min-height:68px;gap:10px}
+  .brand{font-size:18px;gap:8px;min-width:0}
   .brand span{white-space:nowrap}
-  .logo{width:38px!important;height:38px!important;flex:0 0 38px}
+  .logo{width:38px;height:38px;flex:0 0 38px}
   .navlinks,#authNav{display:none!important}
-  .mobile-menu-btn{display:flex!important;margin-left:auto;width:46px;height:46px;border-radius:13px;background:#f1eef7;color:#171321;align-items:center;justify-content:center;font-size:24px;line-height:1;position:relative;z-index:10001;pointer-events:auto!important}
-  .mobile-menu{display:none;position:absolute;left:0;right:0;top:68px;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);box-shadow:0 16px 35px #21113b18;padding:14px 18px 18px;z-index:10000}
-  .mobile-menu.show{display:grid;gap:8px}
-  .mobile-menu-head{display:flex;align-items:center;justify-content:space-between;font-size:20px;margin-bottom:4px}
-  .mobile-menu-head button{width:42px;height:42px;border-radius:12px;background:#f1eef7;font-size:24px}
-  .mobile-menu>button:not(.mobile-menu-head button),.mobile-action{width:100%;min-height:52px;padding:13px 15px;border-radius:12px;text-align:left;background:#f7f5fa;color:#171321;font-size:16px;font-weight:600}
-  .mobile-menu .primary{background:var(--p);color:#fff;text-align:center;justify-content:center}
-  .mobile-menu-sep{height:1px;background:var(--line);margin:4px 0}
-  .hero{padding:38px 0 28px!important}
-  .hero h1{font-size:clamp(38px,11vw,48px)!important;line-height:1.05!important;letter-spacing:-1.5px!important}
-  .hero p{font-size:17px!important;line-height:1.65!important}
-  .pill{font-size:13px!important;padding:8px 11px!important}
-  .section{padding:30px 0 45px!important}
-  .section h2{font-size:25px!important}
-  .section-head h2{font-size:24px!important}
+  .mobile-menu-btn{display:flex;width:46px;height:46px;flex:0 0 46px;margin-left:auto;align-items:center;justify-content:center;border-radius:13px;background:#f1eef7;color:#171321;font-size:24px}
+  .mobile-menu{position:absolute;left:0;right:0;top:68px;display:none;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 16px 35px #21113b18;padding:14px 16px 18px;z-index:1001}
+  .mobile-menu.show{display:grid;gap:9px}
+  .mobile-menu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;font-size:19px}
+  .mobile-menu-head button{width:42px;height:42px;border-radius:12px;background:#f1eef7;font-size:23px}
+  .mobile-menu>button{width:100%;min-height:52px;padding:13px 15px;border-radius:12px;background:#f7f5fa;color:#171321;text-align:left;font-size:16px;font-weight:600}
+  .mobile-menu>.primary{text-align:center;background:var(--p);color:#fff}
+  .mobile-menu-sep{height:1px;background:var(--line);margin:3px 0}
+  .hero{padding:35px 0 28px!important;grid-template-columns:1fr!important}
+  .hero h1{font-size:40px!important;line-height:1.05!important}
+  .hero p{font-size:17px!important;line-height:1.6!important}
+  .hero-card{display:none}
+  .kpis{grid-template-columns:1fr 1fr!important;gap:9px}
+  .kpi{padding:13px 10px!important}
+  .kpi:last-child{grid-column:1/-1}
+  .search{display:grid!important;grid-template-columns:1fr!important;gap:9px}
+  .search input,.search .primary{width:100%;font-size:16px!important;min-height:50px}
+  .section{padding:28px 0 45px!important}
+  .section-head{align-items:flex-start;gap:12px}
+  .section-head h2,.section h2{font-size:24px!important}
+  .grid{grid-template-columns:1fr!important;gap:14px}
   .card .body{padding:18px!important}
-  .body h3{font-size:19px!important;line-height:1.3!important}
-  .meta{font-size:14px!important;line-height:1.45!important}
+  .body h3{font-size:19px!important;line-height:1.3}
+  .meta{font-size:14px!important;line-height:1.5}
   .people{font-size:13px!important}
-  .filter{font-size:14px!important;padding:10px 13px!important}
-  .search input{font-size:16px!important;padding:14px 15px!important}
-  .search .primary{font-size:16px!important;padding:14px 16px!important}
+  .filter{font-size:14px!important;padding:10px 13px}
   button{min-height:44px}
   .modal{padding:10px!important}
   .modal-box{width:100%!important;max-width:100%!important;max-height:92vh!important;padding:20px!important;border-radius:18px!important}
   .modal-head h2{font-size:23px!important}
   .form{gap:15px!important}
   .form label{font-size:14px!important}
-  .form input,.form textarea,.form select{font-size:16px!important;padding:14px!important;min-height:48px}
-  .form .primary{font-size:16px!important;min-height:50px}
-  footer{font-size:13px!important;line-height:1.5}
+  .form input,.form textarea,.form select{font-size:16px!important;min-height:48px;padding:13px!important}
+  .form .primary{width:100%;min-height:50px;font-size:16px}
+  .event-detail-cover{height:190px}
+  .event-info-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:420px){
-  .wrap{padding:0 15px}
-  .brand{font-size:16px!important}
-  .logo{width:36px!important;height:36px!important;flex-basis:36px}
-  .nav{height:64px;min-height:64px!important}
+  .wrap{padding:0 14px}
+  .brand{font-size:16px}
+  .logo{width:36px;height:36px;flex-basis:36px}
+  .nav,.mobile-menu{top:auto}
+  .nav{height:64px;min-height:64px}
   .mobile-menu{top:64px}
   .hero h1{font-size:37px!important}
+  .event-info-grid{grid-template-columns:1fr}
 }
 </style></head>
 <body>
 <header><div class="wrap nav">
   <div class="brand"><div class="logo">AL</div><span>AL Team Paiya</span></div>
-  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Ouvrir le menu">☰</button>
+  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu">☰</button>
   <div class="navlinks">
     <button onclick="showHome()">Accueil</button><button onclick="showExplore()">Explorer</button><button onclick="openCreate()">Créer une sortie</button>
   </div>
   <div id="authNav"><button class="ghost" onclick="openAuth('login')">Se connecter</button><button class="primary" onclick="openAuth('signup')">S'inscrire</button></div>
 </div>
 <div id="mobileMenu" class="mobile-menu">
-  <div class="mobile-menu-head"><strong>Menu</strong><button type="button" onclick="closeMobileMenu()">×</button></div>
+  <div class="mobile-menu-head"><strong>Menu</strong><button type="button" onclick="toggleMobileMenu()">×</button></div>
   <button onclick="closeMobileMenu();showHome()">🏠 Accueil</button>
   <button onclick="closeMobileMenu();showExplore()">🔎 Explorer</button>
   <button onclick="closeMobileMenu();openCreate()">➕ Créer une sortie</button>
   <div class="mobile-menu-sep"></div>
-  <div id="mobileAuthActions">
-    <button class="mobile-action" onclick="closeMobileMenu();openMobileLogin()">🔐 Se connecter</button>
-    <button class="mobile-action primary" onclick="closeMobileMenu();openAuth('signup')">✨ S'inscrire</button>
-  </div>
+  <button onclick="closeMobileMenu();openAuth('login')">🔐 Se connecter</button>
+  <button class="primary" onclick="closeMobileMenu();openAuth('signup')">✨ S'inscrire</button>
 </div></header>
 
 <main id="app">
@@ -1229,101 +1207,18 @@ if (sb) {
 
 </script>
 <script>
-/* MOBILE FALLBACK INTERACTION */
-(function(){
-  function callIf(name,args){
-    try{ if(typeof window[name]==='function'){ window[name].apply(window,args||[]); return true; } }catch(e){ console.error(e); }
-    return false;
-  }
-  function bind(){
-    document.addEventListener('click',function(e){
-      var b=e.target.closest && e.target.closest('button');
-      if(!b) return;
-      if(b.disabled) return;
-      var txt=(b.textContent||'').trim();
-      if(txt==='Se connecter' && !callIf('openAuth',['login'])){
-        var m=document.getElementById('modal');
-        var box=document.getElementById('modalBox');
-        if(m&&box){
-          box.innerHTML='<div class="modal-head"><h2>Bon retour 👋</h2><button class="close" type="button" onclick="document.getElementById(\'modal\').classList.remove(\'show\')">×</button></div><form id="mobileLoginFallback" class="form"><label>Email<input id="mobileLoginEmail" type="email" autocomplete="email" required></label><label>Mot de passe<input id="mobileLoginPassword" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Se connecter</button></form>';
-          m.classList.add('show');
-          var f=document.getElementById('mobileLoginFallback');
-          f.onsubmit=async function(ev){
-            ev.preventDefault();
-            if(!window.supabase||!window.TEAM_PAIYA_CONFIG){alert('Connexion indisponible.');return;}
-            var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
-            var r=await client.auth.signInWithPassword({email:document.getElementById('mobileLoginEmail').value.trim(),password:document.getElementById('mobileLoginPassword').value});
-            if(r.error){alert(r.error.message);return;}
-            location.reload();
-          };
-        }
-      }
-    },true);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
-})();
-</script><script>
-(function(){
-  function mobileAuthTouch(e){
-    var t=e.target;
-    var b=t && t.closest ? t.closest('#authNav button') : null;
-    if(!b) return;
-    var label=(b.textContent||'').trim();
-    if(label.indexOf('Se connecter')!==0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    try{
-      if(typeof window.openAuth==='function'){
-        window.openAuth('login');
-        return;
-      }
-    }catch(err){console.error(err);}
-    var m=document.getElementById('modal'), box=document.getElementById('modalBox');
-    if(!m||!box) return;
-    box.innerHTML='<div class="modal-head"><h2>Bon retour 👋</h2><button type="button" class="close" id="mobileCloseAuth">×</button></div><form id="mobileAuthForm" class="form"><label>Email<input id="mobileEmail" type="email" autocomplete="email" required></label><label>Mot de passe<input id="mobilePassword" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Se connecter</button></form>';
-    m.classList.add('show');
-    document.getElementById('mobileCloseAuth').onclick=function(){m.classList.remove('show');};
-    document.getElementById('mobileAuthForm').onsubmit=async function(ev){
-      ev.preventDefault();
-      var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
-      var r=await client.auth.signInWithPassword({email:document.getElementById('mobileEmail').value.trim(),password:document.getElementById('mobilePassword').value});
-      if(r.error){alert(r.error.message);return;}
-      location.reload();
-    };
-  }
-  document.addEventListener('touchend',mobileAuthTouch,{capture:true,passive:false});
-})();
-</script><script>
-function closeMobileMenu(){var m=document.getElementById('mobileMenu');if(m)m.classList.remove('show');}
-(function(){
-  function initMobileMenu(){
-    var b=document.getElementById('mobileMenuBtn'),m=document.getElementById('mobileMenu');
-    if(!b||!m)return;
-    b.onclick=function(e){e.preventDefault();e.stopPropagation();m.classList.toggle('show');};
-    document.addEventListener('click',function(e){if(!m.contains(e.target)&&e.target!==b)m.classList.remove('show');});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initMobileMenu);else initMobileMenu();
-})();
-</script><script>
-function openMobileLogin(){
-  var m=document.getElementById('modal'),b=document.getElementById('modalBox');
-  if(!m||!b)return;
-  b.innerHTML='<div class="modal-head"><div><h2 style="margin:0">Bon retour 👋</h2><div class="muted">Connecte-toi à Team Paiya.</div></div><button type="button" class="close" onclick="closeModal()">×</button></div><form id="mobileLoginForm" class="form"><label>Email<input id="mobileLoginEmail" type="email" autocomplete="email" inputmode="email" required placeholder="ton@email.com"></label><label>Mot de passe<input id="mobileLoginPassword" type="password" autocomplete="current-password" required placeholder="Ton mot de passe"></label><button class="primary" type="submit">Se connecter</button><button type="button" class="ghost" onclick="closeModal();openAuth('signup')">Créer un compte</button></form>';
-  m.classList.add('show');
-  var f=document.getElementById('mobileLoginForm');
-  f.onsubmit=async function(e){
-    e.preventDefault();
-    var email=document.getElementById('mobileLoginEmail').value.trim();
-    var password=document.getElementById('mobileLoginPassword').value;
-    if(!window.supabase||!window.TEAM_PAIYA_CONFIG){alert('Le service de connexion n’est pas chargé.');return;}
-    var client=window.supabase.createClient(window.TEAM_PAIYA_CONFIG.supabaseUrl,window.TEAM_PAIYA_CONFIG.supabasePublishableKey);
-    var btn=f.querySelector('button[type="submit"]'); btn.disabled=true; btn.textContent='Connexion…';
-    var r=await client.auth.signInWithPassword({email:email,password:password});
-    if(r.error){btn.disabled=false;btn.textContent='Se connecter';alert(r.error.message);return;}
-    closeModal();
-    location.reload();
-  };
+function toggleMobileMenu(){
+  var m=document.getElementById('mobileMenu');
+  if(m)m.classList.toggle('show');
 }
+function closeMobileMenu(){
+  var m=document.getElementById('mobileMenu');
+  if(m)m.classList.remove('show');
+}
+document.addEventListener('click',function(e){
+  var m=document.getElementById('mobileMenu');
+  var b=document.getElementById('mobileMenuBtn');
+  if(m&&m.classList.contains('show')&&!m.contains(e.target)&&e.target!==b)m.classList.remove('show');
+});
 </script></body>
 </html>
