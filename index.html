@@ -783,34 +783,14 @@ function openCreate() {
     aiStatus.textContent = '';
     pendingAiImage = false;
   };
-  if (aiBtn) aiBtn.onclick = async function() {
-    var title = document.getElementById('title').value.trim();
-    var category = document.getElementById('category').value;
-    var placeValue = document.getElementById('place').value;
-    if (!title) { toast('Indique d’abord le nom de la sortie.'); return; }
-    if (!currentUser || !sb) return;
-    aiBtn.disabled = true;
-    aiBtn.textContent = '⏳ Génération...';
-    aiStatus.textContent = 'L’IA prépare une illustration à partir de ta sortie…';
-    try {
-      var temp = await sb.from('events').insert({creator_id:currentUser.id,title:title,description:document.getElementById('description').value.trim(),category:category,place:placeValue==='__custom'?(document.getElementById('customPlace').value.trim()||'Lieu personnalisé'):placeValue,city:document.getElementById('city').value.trim()||'Lille',event_date:document.getElementById('date').value||'2099-12-31',event_time:document.getElementById('time').value||'12:00',price:0,max_participants:Number(document.getElementById('max').value)||10}).select().single();
-      if (temp.error) throw temp.error;
-      var url = await generateAiEventImage(temp.data.id);
-      if (!url) throw new Error('Aucune image retournée.');
-      previewImg.src = url + '?v=' + Date.now();
-      preview.style.display = 'block';
-      removeBtn.style.display = 'inline-flex';
-      aiStatus.textContent = 'Illustration générée. Elle sera utilisée pour cette sortie.';
-      pendingAiImage = true;
-      window._aiPreviewEventId = temp.data.id;
-    } catch(e) {
-      console.error(e);
-      aiStatus.textContent = 'La génération a échoué : ' + (e.message || e);
-      toast('Impossible de générer l’illustration.');
-    } finally {
-      aiBtn.disabled = false;
-      aiBtn.textContent = '✨ Générer une illustration IA';
+  if (aiBtn) aiBtn.onclick = function() {
+    if (!document.getElementById('title').value.trim()) {
+      toast('Indique d’abord le nom de la sortie.');
+      return;
     }
+    pendingAiImage = true;
+    aiStatus.textContent = '✨ L’illustration IA sera générée lors de la création de la sortie.';
+    aiBtn.textContent = '✓ IA activée';
   };
 
   var createBtn = document.getElementById('createEventButton');
@@ -893,7 +873,7 @@ async function createEvent(ev) {
   }
 
   var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
-  var useAi = false;
+  var useAi = pendingAiImage;
 
   try {
     if (imageFile) {
