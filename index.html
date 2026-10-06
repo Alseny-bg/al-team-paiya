@@ -746,11 +746,73 @@ function openCreate() {
     '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
     '<div class="card" style="padding:14px;background:#faf9fc">' +
     '<strong>📸 Illustration de la sortie</strong>' +
-    '<div class="muted" style="font-size:12px;margin:5px 0 10px">Choisis ta photo ou laisse l’IA créer une illustration adaptée au titre, à la catégorie et au lieu.</div>' +
-    '<label style="display:block"><input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px"></label>' +
-    '<label style="display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px"><input id="generateAiImage" type="checkbox" style="width:auto;margin:0"> ✨ Générer automatiquement une illustration avec l’IA</label>' +
+    '<div class="muted" style="font-size:12px;margin:5px 0 10px">Ajoute ta photo ou laisse l’IA créer une illustration à partir des informations de ta sortie.</div>' +
+    '<div id="eventImagePreview" style="display:none;margin:10px 0;border-radius:14px;overflow:hidden;height:150px;background:#eee"><img id="eventImagePreviewImg" style="width:100%;height:100%;object-fit:cover"></div>' +
+    '<label style="display:block">Ta photo<input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:6px"></label>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button id="generateAiImageBtn" class="ghost" type="button">✨ Générer une illustration IA</button><button id="removeEventImageBtn" class="ghost" type="button" style="display:none">✕ Retirer la photo</button></div>' +
+    '<div id="aiImageStatus" class="muted" style="font-size:12px;margin-top:8px"></div>' +
     '</div>' +
     '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
+  var fileInput = document.getElementById('eventImageFile');
+  var preview = document.getElementById('eventImagePreview');
+  var previewImg = document.getElementById('eventImagePreviewImg');
+  var aiBtn = document.getElementById('generateAiImageBtn');
+  var removeBtn = document.getElementById('removeEventImageBtn');
+  var aiStatus = document.getElementById('aiImageStatus');
+  var pendingAiImage = false;
+
+  if (fileInput) fileInput.onchange = function() {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+      toast('Image invalide : JPG, PNG ou WebP, 5 Mo maximum.');
+      fileInput.value = '';
+      return;
+    }
+    previewImg.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+    removeBtn.style.display = 'inline-flex';
+    aiStatus.textContent = 'Photo sélectionnée. Elle remplacera l’illustration IA.';
+    pendingAiImage = false;
+  };
+  if (removeBtn) removeBtn.onclick = function() {
+    fileInput.value = '';
+    preview.style.display = 'none';
+    previewImg.removeAttribute('src');
+    removeBtn.style.display = 'none';
+    aiStatus.textContent = '';
+    pendingAiImage = false;
+  };
+  if (aiBtn) aiBtn.onclick = async function() {
+    var title = document.getElementById('title').value.trim();
+    var category = document.getElementById('category').value;
+    var placeValue = document.getElementById('place').value;
+    if (!title) { toast('Indique d’abord le nom de la sortie.'); return; }
+    if (!currentUser || !sb) return;
+    aiBtn.disabled = true;
+    aiBtn.textContent = '⏳ Génération...';
+    aiStatus.textContent = 'L’IA prépare une illustration à partir de ta sortie…';
+    try {
+      var temp = await sb.from('events').insert({creator_id:currentUser.id,title:title,description:document.getElementById('description').value.trim(),category:category,place:placeValue==='__custom'?(document.getElementById('customPlace').value.trim()||'Lieu personnalisé'):placeValue,city:document.getElementById('city').value.trim()||'Lille',event_date:document.getElementById('date').value||'2099-12-31',event_time:document.getElementById('time').value||'12:00',price:0,max_participants:Number(document.getElementById('max').value)||10}).select().single();
+      if (temp.error) throw temp.error;
+      var url = await generateAiEventImage(temp.data.id);
+      if (!url) throw new Error('Aucune image retournée.');
+      previewImg.src = url + '?v=' + Date.now();
+      preview.style.display = 'block';
+      removeBtn.style.display = 'inline-flex';
+      aiStatus.textContent = 'Illustration générée. Elle sera utilisée pour cette sortie.';
+      pendingAiImage = true;
+      window._aiPreviewEventId = temp.data.id;
+    } catch(e) {
+      console.error(e);
+      aiStatus.textContent = 'La génération a échoué : ' + (e.message || e);
+      toast('Impossible de générer l’illustration.');
+    } finally {
+      aiBtn.disabled = false;
+      aiBtn.textContent = '✨ Générer une illustration IA';
+    }
+  };
+
   var createBtn = document.getElementById('createEventButton');
   if (createBtn) createBtn.onclick = function(ev) { createEvent(ev); };
   document.getElementById('place').onchange = function(ev) {
@@ -831,7 +893,7 @@ async function createEvent(ev) {
   }
 
   var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
-  var useAi = !!document.getElementById('generateAiImage')?.checked;
+  var useAi = false;
 
   try {
     if (imageFile) {
