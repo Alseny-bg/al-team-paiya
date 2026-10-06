@@ -534,10 +534,7 @@ async function submitReview(ev,eventId){
   ev.preventDefault();
   if(!currentUser||!sb)return;
   var payload={event_id:eventId,reviewer_id:currentUser.id,rating:Number(document.getElementById('reviewRating').value),comment:document.getElementById('reviewComment').value.trim()};
-  var existing=await sb.from('event_reviews').select('id').eq('event_id',eventId).eq('reviewer_id',currentUser.id).maybeSingle();
-  var r=existing.data
-    ? await sb.from('event_reviews').update({rating:payload.rating,comment:payload.comment}).eq('id',existing.data.id).eq('reviewer_id',currentUser.id)
-    : await sb.from('event_reviews').insert(payload);
+  var r=await sb.rpc('upsert_event_review',{p_event_id:eventId,p_rating:payload.rating,p_comment:payload.comment});
   if(r.error){toast('Impossible d’enregistrer ton avis : '+r.error.message);return;}
   closeModal(); toast('Merci pour ton avis ⭐'); await showEvent(eventId);
 }
@@ -744,7 +741,7 @@ function openCreate() {
     '<label>Lieu<select id="place">'+places.map(function(p){return '<option>'+esc(p)+'</option>';}).join('')+'<option value="__custom">Autre lieu...</option></select></label>' +
     '<label id="customWrap" style="display:none">Lieu personnalisé<input id="customPlace" placeholder="Nom du lieu"></label><label>Adresse du lieu <span class="muted">(optionnel, pour la carte)</span><input id="locationAddress" placeholder="Ex. 12 rue Nationale, Lille"></label>' +
     '<div class="two"><label>Ville<input id="city" value="Lille" required></label><label>Participants max<input id="max" type="number" min="2" value="10" required></label></div>' +
-    '<div class="two"><label>Date<input id="date" type="date" required></label><label>Heure<input id="time" type="time" required></label></div>' +
+    '<div class="two"><label>Date<input id="date" type="date" min="'+new Date().toISOString().slice(0,10)+'" required></label><label>Heure<input id="time" type="time" required></label></div>' +
     '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
     '<button id="createEventButton" class="primary" type="button" onclick="createEvent(event)">Créer la sortie</button></form>');
   var createBtn = document.getElementById('createEventButton');
@@ -764,6 +761,13 @@ async function createEvent(ev) {
   var place = document.getElementById('place').value;
   if (place === '__custom') place = document.getElementById('customPlace').value.trim();
   if (!place) return;
+  var selectedDate = document.getElementById('date').value;
+  var selectedTime = document.getElementById('time').value || '00:00';
+  var selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+  if (!selectedDate || selectedDateTime.getTime() < Date.now()) {
+    toast('Impossible de créer une sortie dans le passé. Choisis une date et une heure à venir.');
+    return;
+  }
   var payload = {
     creator_id:currentUser.id,title:document.getElementById('title').value.trim(),
     description:document.getElementById('description').value.trim(),
