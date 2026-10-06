@@ -843,69 +843,138 @@ async function generatePuterEventImage(eventId, eventInfo) {
   return url;
 }
 async function createEvent(ev) {
-  ev.preventDefault();
-  toast('Création de la sortie en cours...');
-  console.log('createEvent lancé', {sb:!!sb, currentUser:!!currentUser});
-  if (!sb) { toast('Erreur : Supabase n’est pas connecté.'); return; }
-  if (!currentUser) { toast('Erreur : tu dois être connecté.'); return; }
-  try {
-  var place = document.getElementById('place').value;
-  if (place === '__custom') place = document.getElementById('customPlace').value.trim();
-  if (!place) return;
-  var selectedDate = document.getElementById('date').value;
-  var selectedTime = document.getElementById('time').value || '00:00';
-  var selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
-  if (!selectedDate || selectedDateTime.getTime() < Date.now()) {
-    toast('Impossible de créer une sortie dans le passé. Choisis une date et une heure à venir.');
+  if (ev) ev.preventDefault();
+  if (window.creatingEvent) return;
+  window.creatingEvent = true;
+
+  var createBtn = document.getElementById('createEventButton');
+  if (createBtn) {
+    createBtn.disabled = true;
+    createBtn.textContent = 'Création…';
+    createBtn.style.opacity = '.7';
+    createBtn.style.cursor = 'wait';
+  }
+
+  if (!sb) {
+    window.creatingEvent = false;
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+    toast('Erreur : Supabase n’est pas connecté.');
     return;
   }
-  var payload = {
-    creator_id:currentUser.id,title:document.getElementById('title').value.trim(),
-    description:document.getElementById('description').value.trim(),
-    category:document.getElementById('category').value,place:place,
-    city:document.getElementById('city').value.trim(),event_date:document.getElementById('date').value,
-    event_time:document.getElementById('time').value,price:0,max_participants:Number(document.getElementById('max').value)
-  };
-  var address=document.getElementById('locationAddress').value.trim();
-  var coords=address ? await geocodePlace(address,payload.city) : null;
-  var r = await sb.from('events').insert({creator_id:currentUser.id,title:payload.title,description:payload.description,category:payload.category,place:payload.place,city:payload.city,event_date:payload.event_date,event_time:payload.event_time,price:0,max_participants:payload.max_participants,location_address:address||null,latitude:coords?coords.lat:null,longitude:coords?coords.lng:null,image_url:null}).select().single();
-  if (r.error) {
-    console.error('Création sortie:', r.error);
-    toast('Impossible de créer la sortie : ' + (r.error.message || 'erreur Supabase'));
-    return;
-  }
-  if (!r.data) {
-    toast('La sortie n’a pas pu être créée.');
+  if (!currentUser) {
+    window.creatingEvent = false;
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+    toast('Erreur : tu dois être connecté.');
     return;
   }
 
-  var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
-
   try {
-    if (imageFile) {
-      toast('📸 Ajout de ta photo...');
-      await uploadEventImage(r.data.id, imageFile);
-    } else {
-      toast('✨ Création automatique de l’illustration IA...');
-      await generatePuterEventImage(r.data.id, {
-        title: payload.title,
-        category: payload.category,
-        place: payload.place,
-        city: payload.city,
-        description: payload.description
-      });
+    var place = document.getElementById('place').value;
+    if (place === '__custom') place = document.getElementById('customPlace').value.trim();
+    if (!place) {
+      window.creatingEvent = false;
+      if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+      toast('Choisis un lieu pour la sortie.');
+      return;
     }
-  } catch (imageError) {
-    console.error('Image sortie:', imageError);
-    toast('Sortie créée. L’illustration IA n’a pas pu être ajoutée ; une image de catégorie sera utilisée.');
-  }
 
-  closeModal();
-  await loadEvents();
-  showExplore();
-  toast('Sortie créée 🎉');
+    var selectedDate = document.getElementById('date').value;
+    var selectedTime = document.getElementById('time').value || '00:00';
+    var selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+    if (!selectedDate || selectedDateTime.getTime() < Date.now()) {
+      window.creatingEvent = false;
+      if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+      toast('Impossible de créer une sortie dans le passé. Choisis une date et une heure à venir.');
+      return;
+    }
+
+    var payload = {
+      creator_id:currentUser.id,
+      title:document.getElementById('title').value.trim(),
+      description:document.getElementById('description').value.trim(),
+      category:document.getElementById('category').value,
+      place:place,
+      city:document.getElementById('city').value.trim(),
+      event_date:selectedDate,
+      event_time:selectedTime,
+      price:0,
+      max_participants:Number(document.getElementById('max').value)
+    };
+
+    var address = document.getElementById('locationAddress').value.trim();
+    var imageFile = document.getElementById('eventImageFile')?.files?.[0] || null;
+
+    // IMPORTANT : on crée d'abord la sortie, sans attendre le géocodage ni l'image IA.
+    var r = await sb.from('events').insert({
+      creator_id:payload.creator_id,
+      title:payload.title,
+      description:payload.description,
+      category:payload.category,
+      place:payload.place,
+      city:payload.city,
+      event_date:payload.event_date,
+      event_time:payload.event_time,
+      price:0,
+      max_participants:payload.max_participants,
+      location_address:address || null,
+      latitude:null,
+      longitude:null,
+      image_url:null
+    }).select().single();
+
+    if (r.error || !r.data) {
+      console.error('Création sortie:', r.error);
+      window.creatingEvent = false;
+      if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+      toast('Impossible de créer la sortie : ' + ((r.error && r.error.message) || 'erreur Supabase'));
+      return;
+    }
+
+    var eventId = r.data.id;
+
+    // Confirmation immédiate : l'utilisateur voit sa sortie sans attendre les traitements secondaires.
+    closeModal();
+    window.creatingEvent = false;
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
+    await loadEvents();
+    showExplore();
+    toast('Sortie créée 🎉');
+
+    // Traitements secondaires en arrière-plan : géolocalisation puis illustration.
+    (async function() {
+      try {
+        if (address) {
+          var coords = await geocodePlace(address, payload.city);
+          if (coords) {
+            await sb.from('events').update({latitude:coords.lat, longitude:coords.lng}).eq('id',eventId).eq('creator_id',currentUser.id);
+          }
+        }
+      } catch (geoError) {
+        console.warn('Géolocalisation sortie:', geoError);
+      }
+
+      try {
+        if (imageFile) {
+          await uploadEventImage(eventId, imageFile);
+        } else {
+          await generatePuterEventImage(eventId, {
+            title:payload.title,
+            category:payload.category,
+            place:payload.place,
+            city:payload.city,
+            description:payload.description
+          });
+        }
+        await loadEvents();
+      } catch (imageError) {
+        console.error('Image sortie:', imageError);
+      }
+    })();
+
   } catch (e) {
     console.error('createEvent exception:', e);
+    window.creatingEvent = false;
+    if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
     toast('Erreur inattendue : ' + (e.message || e));
   }
 }
