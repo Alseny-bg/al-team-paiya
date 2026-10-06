@@ -428,6 +428,30 @@ async function showEvent(id) {
     }
     if (currentUser) joined = ids.indexOf(currentUser.id) !== -1;
   }
+  var reviews = [];
+  var averageRating = 0;
+  var myReview = null;
+  if (sb) {
+    var rr = await sb.from('event_reviews').select('*, profiles(full_name,username,avatar_url)').eq('event_id',id).order('created_at',{ascending:false});
+    if (!rr.error) {
+      reviews = rr.data || [];
+      averageRating = reviews.length ? (reviews.reduce(function(sum,r){ return sum + Number(r.rating||0); },0) / reviews.length) : 0;
+      if (currentUser) myReview = reviews.find(function(r){ return r.reviewer_id === currentUser.id; }) || null;
+    }
+  }
+  var eventDateTime = new Date(e.event_date + 'T' + (e.event_time || '00:00'));
+  var isPast = eventDateTime.getTime() < Date.now();
+  var reviewButton = (currentUser && joined && isPast) ?
+    '<button class="ghost" style="width:100%;margin-top:10px" onclick="openReview(\''+id+'\')">'+(myReview?'✏️ Modifier mon avis':'⭐ Noter cette sortie')+'</button>' : '';
+  var reviewsHtml = reviews.length ?
+    reviews.map(function(r){
+      var rp=r.profiles||{};
+      var stars='★★★★★'.slice(0,Number(r.rating||0))+'☆☆☆☆☆'.slice(0,5-Number(r.rating||0));
+      return '<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:10px"><strong>'+esc(rp.full_name||rp.username||'Membre')+'</strong><span>'+stars+'</span></div><div class="muted" style="font-size:12px;margin-top:4px">'+dateLabel(r.created_at.slice(0,10),r.created_at.slice(11,16))+'</div><div style="margin-top:7px;color:#5f5968;white-space:pre-wrap">'+esc(r.comment||'')+'</div></div>';
+    }).join('') : '<div class="muted">Pas encore d’avis.</div>';
+  var ratingHtml = reviews.length ? '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">⭐ Avis</h3><div class="muted">'+reviews.length+' avis</div></div><strong style="font-size:24px"> '+averageRating.toFixed(1)+' / 5</strong></div><div style="margin-top:10px;font-size:18px">★★★★★</div><div style="margin-top:8px">'+reviewsHtml+'</div></div></div>' :
+    '<div class="card" style="margin-top:18px"><div class="body"><h3>⭐ Avis</h3><div class="muted">Aucun avis pour le moment.</div></div></div>';
+
   var button = currentUser ?
     (joined ? '<button class="primary" style="width:100%;margin-top:18px" disabled>✓ Tu participes</button>' :
     (e.count >= e.max_participants ? '<button class="primary" style="width:100%;margin-top:18px" disabled>Sortie complète</button>' :
@@ -454,7 +478,7 @@ async function showEvent(id) {
     '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
     '<h3 style="margin-bottom:6px">Participants</h3><div style="border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff">'+participantHtml+'</div>' +
     '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
-    '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + button
+    '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + reviewButton + button + ratingHtml
   );
   var inviteBtn = document.getElementById('inviteBtn');
   if (inviteBtn && (!currentUser || e.creator_id !== currentUser.id)) inviteBtn.style.display='none';
@@ -493,6 +517,29 @@ async function respondInvitation(invitationId,status) {
   loadEvents();
 }
 
+async function openReview(eventId){
+  if(!currentUser||!sb){openAuth('login');return;}
+  var e=allEvents.find(function(x){return String(x.id)===String(eventId);});
+  if(!e)return;
+  var existing=await sb.from('event_reviews').select('*').eq('event_id',eventId).eq('reviewer_id',currentUser.id).maybeSingle();
+  var r=existing.data||{};
+  openModal('<div class="modal-head"><div><span class="pill">⭐ Ton avis</span><h2 style="margin:10px 0 4px">'+esc(e.title)+'</h2><div class="muted">Partage ton expérience avec la Team Paiya.</div></div><button class="close" onclick="closeModal()">×</button></div>'+
+    '<form class="form" onsubmit="submitReview(event,\''+eventId+'\')">'+
+    '<label>Note<select id="reviewRating"><option value="5" '+(r.rating===5?'selected':'')+'>5 — Excellent ⭐⭐⭐⭐⭐</option><option value="4" '+(r.rating===4?'selected':'')+'>4 — Très bien ⭐⭐⭐⭐</option><option value="3" '+(r.rating===3?'selected':'')+'>3 — Bien ⭐⭐⭐</option><option value="2" '+(r.rating===2?'selected':'')+'>2 — Moyen ⭐⭐</option><option value="1" '+(r.rating===1?'selected':'')+'>1 — À améliorer ⭐</option></select></label>'+
+    '<label>Ton avis<textarea id="reviewComment" maxlength="1000" placeholder="Qu’as-tu pensé de cette sortie ?">'+esc(r.comment||'')+'</textarea></label>'+
+    '<button class="primary" type="submit">Publier mon avis</button></form>');
+}
+async function submitReview(ev,eventId){
+  ev.preventDefault();
+  if(!currentUser||!sb)return;
+  var payload={event_id:eventId,reviewer_id:currentUser.id,rating:Number(document.getElementById('reviewRating').value),comment:document.getElementById('reviewComment').value.trim()};
+  var existing=await sb.from('event_reviews').select('id').eq('event_id',eventId).eq('reviewer_id',currentUser.id).maybeSingle();
+  var r=existing.data
+    ? await sb.from('event_reviews').update({rating:payload.rating,comment:payload.comment}).eq('id',existing.data.id).eq('reviewer_id',currentUser.id)
+    : await sb.from('event_reviews').insert(payload);
+  if(r.error){toast('Impossible d’enregistrer ton avis : '+r.error.message);return;}
+  closeModal(); toast('Merci pour ton avis ⭐'); await showEvent(eventId);
+}
 async function joinEvent(id) {
   if (!currentUser) { closeModal(); openAuth('login'); return; }
   if (!sb) return;
