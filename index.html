@@ -358,7 +358,7 @@ async function showEvent(id) {
   openModal('<div class="modal-head"><div><span class="pill">'+emoji(e.category)+' '+esc(e.category)+'</span><h2 style="margin:10px 0 4px">'+esc(e.title)+'</h2><div class="muted">'+esc(e.place)+' · '+esc(e.city)+'</div></div><button class="close" onclick="closeModal()">×</button></div>' +
     '<p style="line-height:1.6;color:#5f5968">'+esc(e.description || 'Pas de description.')+'</p>' +
     '<div class="meta" style="background:#f8f6fb;padding:14px;border-radius:12px"><div>📅 '+dateLabel(e.event_date,e.event_time)+'</div><div>👥 '+e.count+'/'+e.max_participants+' participants</div><div>💜 Gratuit</div></div>' +
-    '<h3>Participants</h3><div>' + (participants.length ? participants.map(function(p){var prof=p.profiles||{};return '<span class="pill" style="margin:3px">'+esc(prof.full_name||prof.username||'Membre')+'</span>';}).join('') : '<span class="muted">Sois le premier à rejoindre !</span>') + '</div>' + button);
+    '<h3>Participants</h3><div>' + (participants.length ? participants.map(function(p){var prof=p.profiles||{};return '<button class="pill" style="margin:3px;cursor:pointer;border:0" onclick="viewProfile(\''+p.user_id+'\')">'+(prof.avatar_url ? '<img src="'+esc(prof.avatar_url)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">' : '')+esc(prof.full_name||prof.username||'Membre')+'</button>';}).join('') : '<span class="muted">Sois le premier à rejoindre !</span>') + '</div>' + button);
 }
 
 async function joinEvent(id) {
@@ -459,6 +459,21 @@ async function leaveEvent(id) {
   await loadEvents();
   showMyOutings();
   toast('Tu as quitté la sortie.');
+}
+
+async function viewProfile(userId) {
+  if (!sb || !userId) return;
+  var r = await sb.from('profiles').select('*').eq('id',userId).single();
+  if (r.error || !r.data) { toast('Profil introuvable.'); return; }
+  var p = r.data;
+  var created = allEvents.filter(function(e){return e.creator_id === userId;}).length;
+  var jr = await sb.from('event_participants').select('event_id').eq('user_id',userId);
+  var joined = jr.error ? 0 : (jr.data || []).length;
+  var avatar = p.avatar_url ? '<img src="'+esc(p.avatar_url)+'" style="width:92px;height:92px;border-radius:50%;object-fit:cover">' : '<div style="width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-size:34px;font-weight:800">'+esc(((p.full_name||p.username||'M').charAt(0)).toUpperCase())+'</div>';
+  openModal('<div class="modal-head"><div><span class="pill">👤 Profil</span></div><button class="close" onclick="closeModal()">×</button></div>' +
+    '<div style="display:flex;gap:18px;align-items:center">'+avatar+'<div><h2 style="margin:0 0 5px">'+esc(p.full_name||'Membre Team Paiya')+'</h2><div class="muted">@'+esc(p.username||'membre')+' · '+esc(p.city||'Lille')+'</div></div></div>' +
+    '<div class="kpis" style="margin-top:20px"><div class="kpi"><strong>'+created+'</strong><span>sortie(s) créée(s)</span></div><div class="kpi"><strong>'+joined+'</strong><span>participation(s)</span></div></div>' +
+    '<div class="card" style="margin-top:18px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(p.bio||'Pas encore de bio.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(p.interests||'Non renseignés')+'</div></div></div>');
 }
 
 function openCreate() {
