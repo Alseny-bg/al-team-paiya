@@ -870,6 +870,18 @@ async function createEvent(ev) {
     window.creatingEvent = false;
     if (createBtn) { createBtn.disabled = false; createBtn.textContent = 'Créer la sortie'; createBtn.style.opacity = ''; createBtn.style.cursor = ''; }
     await loadEvents();
+
+    // Sécurité UI : si la lecture globale échoue momentanément juste après
+    // l'insertion, on conserve quand même la sortie fraîchement créée dans
+    // l'interface afin qu'elle apparaisse immédiatement dans Explorer.
+    if (!allEvents.some(function(x){ return String(x.id) === String(eventId); })) {
+      var freshEvent = Object.assign({}, r.data, {count:0});
+      allEvents.push(freshEvent);
+      allEvents.sort(function(a,b){
+        return String(a.event_date+' '+(a.event_time||'')).localeCompare(String(b.event_date+' '+(b.event_time||'')));
+      });
+    }
+
     showExplore();
     toast('Sortie créée 🎉');
 
