@@ -670,6 +670,8 @@ async function saveEventEdit(ev,id) {
   if (!e || e.creator_id !== currentUser.id) return;
   var payload = {title:document.getElementById('editTitle').value.trim(),category:document.getElementById('editCategory').value,place:document.getElementById('editPlace').value.trim(),city:document.getElementById('editCity').value.trim(),max_participants:Number(document.getElementById('editMax').value),event_date:document.getElementById('editDate').value,event_time:document.getElementById('editTime').value,description:document.getElementById('editDescription').value.trim(),location_address:document.getElementById('editAddress').value.trim()||null,theme_color:document.getElementById('editTheme').value,catchphrase:document.getElementById('editCatchphrase').value};
   if (!payload.title || !payload.place || !payload.city || !payload.event_date || !payload.event_time) { toast('Complète les informations obligatoires.'); return; }
+  var editDateTime = new Date(payload.event_date + 'T' + payload.event_time);
+  if (isNaN(editDateTime.getTime()) || editDateTime.getTime() < Date.now()) { toast('Impossible de déplacer une sortie dans le passé. Choisis une date et une heure à venir.'); return; }
   if (payload.max_participants < Number(e.count||0)) { toast('Le nombre maximum ne peut pas être inférieur aux participants actuels.'); return; }
   var r = await sb.from('events').update(payload).eq('id',id).eq('creator_id',currentUser.id);
   if (r.error) { toast('Impossible de modifier la sortie : '+r.error.message); return; }
@@ -780,8 +782,6 @@ async function openNotificationCenter() {
     var actions = '';
     if (n.type === 'invitation' && n.invitation_id) {
       actions = '<div style="display:flex;gap:8px;margin-top:10px"><button class="primary" data-inv="'+n.invitation_id+'" data-status="accepted" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">✓ Accepter</button><button class="ghost" data-inv="'+n.invitation_id+'" data-status="declined" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">Refuser</button></div>';
-    } else if (n.event_id) {
-      actions = '<button class="primary" style="margin-top:10px" onclick="openNotificationEvent(\''+n.event_id+'\',\''+n.id+'\')">👀 Voir la sortie →</button>';
     } else if (n.event_id) {
       actions = '<button class="primary" style="margin-top:10px" onclick="openNotificationEvent(\''+n.event_id+'\',\''+n.id+'\')">👀 Voir la sortie →</button>';
     }
