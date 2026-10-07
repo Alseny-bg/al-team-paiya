@@ -120,6 +120,7 @@ function eventPhoto(event) {
 }
 function card(event) {
   var photo = eventPhoto(event);
+  var theme = event.theme_color || '#ed159d';
   var eventDate = new Date(event.event_date + 'T' + (event.event_time || '00:00'));
   var isPast = eventDate.getTime() < Date.now();
   var isFull = Number(event.count || 0) >= Number(event.max_participants || 0);
@@ -132,7 +133,7 @@ function card(event) {
         ? '<span class="status-badge soon">Plus que '+remaining+' place'+(remaining>1?'s':'')+'</span>'
         : '<span class="status-badge available">'+remaining+' places</span>';
 
-  return '<article class="card">' +
+  return '<article class="card" style="--event-theme:'+esc(theme)+';border-top:4px solid var(--event-theme)">' +
     '<div class="cover"><img src="' + photo + '" alt="' + esc(event.title) + '" loading="lazy"><span>' + emoji(event.category) + ' ' + esc(event.category) + '</span></div>' +
     '<div class="body">' +
     '<div class="row"><span class="pill">' + esc(event.place) + '</span><span class="muted">' + esc(event.city) + '</span></div>' +
@@ -655,17 +656,18 @@ async function editEvent(id) {
     '<label>Lieu<input id="editPlace" required value="'+esc(e.place||'')+'"></label>' +
     '<div class="two"><label>Ville<input id="editCity" required value="'+esc(e.city||'Lille')+'"></label><label>Participants max<input id="editMax" type="number" min="'+Math.max(2,Number(e.count||0))+'" value="'+Number(e.max_participants||10)+'" required></label></div>' +
     '<div class="two"><label>Date<input id="editDate" type="date" value="'+esc(e.event_date||'')+'" required></label><label>Heure<input id="editTime" type="time" value="'+esc(e.event_time||'')+'" required></label></div>' +
-    '<label>Description<textarea id="editDescription">'+esc(e.description||'')+'</textarea></label>' +
+    '<label>Couleur de la sortie<select id="editTheme"><option value="#ed159d">💗 Team Paiya</option><option value="#7c3aed">💜 Violet</option><option value="#2563eb">💙 Bleu</option><option value="#059669">💚 Vert</option><option value="#f59e0b">💛 Orange</option><option value="#ef4444">❤️ Rouge</option><option value="#111827">🖤 Sombre</option></select></label><label>Description<textarea id="editDescription">'+esc(e.description||'')+'</textarea></label>' +
     '<label>Adresse du lieu<input id="editAddress" value="'+esc(e.location_address||'')+'" placeholder="Optionnel"></label>' +
     '<button class="primary" type="submit">Enregistrer les modifications</button></form>' +
     '<button class="ghost danger" style="width:100%;margin-top:10px" onclick="deleteEvent(\''+id+'\')">🗑️ Supprimer cette sortie</button>');
+  var editTheme=document.getElementById('editTheme'); if(editTheme) editTheme.value=e.theme_color||'#ed159d';
 }
 async function saveEventEdit(ev,id) {
   if (ev) ev.preventDefault();
   if (!currentUser || !sb) return;
   var e = allEvents.find(function(x){ return String(x.id) === String(id); });
   if (!e || e.creator_id !== currentUser.id) return;
-  var payload = {title:document.getElementById('editTitle').value.trim(),category:document.getElementById('editCategory').value,place:document.getElementById('editPlace').value.trim(),city:document.getElementById('editCity').value.trim(),max_participants:Number(document.getElementById('editMax').value),event_date:document.getElementById('editDate').value,event_time:document.getElementById('editTime').value,description:document.getElementById('editDescription').value.trim(),location_address:document.getElementById('editAddress').value.trim()||null};
+  var payload = {title:document.getElementById('editTitle').value.trim(),category:document.getElementById('editCategory').value,place:document.getElementById('editPlace').value.trim(),city:document.getElementById('editCity').value.trim(),max_participants:Number(document.getElementById('editMax').value),event_date:document.getElementById('editDate').value,event_time:document.getElementById('editTime').value,description:document.getElementById('editDescription').value.trim(),location_address:document.getElementById('editAddress').value.trim()||null,theme_color:document.getElementById('editTheme').value};
   if (!payload.title || !payload.place || !payload.city || !payload.event_date || !payload.event_time) { toast('Complète les informations obligatoires.'); return; }
   if (payload.max_participants < Number(e.count||0)) { toast('Le nombre maximum ne peut pas être inférieur aux participants actuels.'); return; }
   var r = await sb.from('events').update(payload).eq('id',id).eq('creator_id',currentUser.id);
@@ -862,7 +864,7 @@ function openCreate() {
     '<label id="customWrap" style="display:none">Lieu personnalisé<input id="customPlace" placeholder="Nom du lieu"></label><label>Adresse du lieu <span class="muted">(optionnel, pour la carte)</span><input id="locationAddress" placeholder="Ex. 12 rue Nationale, Lille"></label>' +
     '<div class="two"><label>Ville<input id="city" value="Lille" required></label><label>Participants max<input id="max" type="number" min="2" value="10" required></label></div>' +
     '<div class="two"><label>Date<input id="date" type="date" min="'+new Date().toISOString().slice(0,10)+'" required></label><label>Heure<input id="time" type="time" required></label></div>' +
-    '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label>' +
+    '<label>Description<textarea id="description" placeholder="Décris rapidement la sortie..."></textarea></label><label>Couleur de la sortie<select id="themeColor"><option value="#ed159d">💗 Team Paiya</option><option value="#7c3aed">💜 Violet</option><option value="#2563eb">💙 Bleu</option><option value="#059669">💚 Vert</option><option value="#f59e0b">💛 Orange</option><option value="#ef4444">❤️ Rouge</option><option value="#111827">🖤 Sombre</option></select></label>' +
     '<div class="card" style="padding:14px;background:#faf9fc">' +
     '<strong>📸 Illustration de la sortie</strong>' +
     '<div class="muted" style="font-size:12px;margin:5px 0 10px">Ajoute ta photo ou, si tu n’en mets pas, AL Team Paiya créera automatiquement une illustration IA adaptée à ta sortie.</div>' +
@@ -1015,7 +1017,8 @@ async function createEvent(ev) {
       event_date:selectedDate,
       event_time:selectedTime,
       price:0,
-      max_participants:Number(document.getElementById('max').value)
+      max_participants:Number(document.getElementById('max').value),
+      theme_color:document.getElementById('themeColor').value
     };
 
     var address = document.getElementById('locationAddress').value.trim();
@@ -1033,6 +1036,7 @@ async function createEvent(ev) {
       event_time:payload.event_time,
       price:0,
       max_participants:payload.max_participants,
+      theme_color:payload.theme_color,
       location_address:address || null,
       latitude:null,
       longitude:null,
