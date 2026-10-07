@@ -354,7 +354,11 @@ async function loadEvents() {
 
 async function showEvent(id) {
   var e = allEvents.find(function(x){ return String(x.id) === String(id); });
-  if (!e) return;
+  if (!e) { toast('Cette sortie est introuvable.'); return; }
+
+  // Affiche immédiatement un état de chargement : sur mobile, les requêtes
+  // participants/avis ne doivent pas donner l'impression que le bouton ne répond pas.
+  openModal('<div style="padding:28px;text-align:center"><div style="font-size:34px">⏳</div><h3 style="margin:12px 0 6px">Chargement de la sortie…</h3><div class="muted">Récupération des participants et des informations.</div></div>');
 
   var participants = [];
   var joined = false;
@@ -517,7 +521,7 @@ async function joinEvent(id) {
   if (ev.creator_id === currentUser.id) { toast('Tu es déjà le créateur de cette sortie.'); return; }
   if (ev.count >= ev.max_participants) { toast('Cette sortie est complète.'); return; }
 
-  var joinBtn = document.querySelector('[onclick*="joinEvent(\''+id+'\'"]');
+  var joinBtn = document.getElementById('joinEventBtn');
   if (joinBtn) {
     joinBtn.disabled = true;
     joinBtn.textContent = 'Participation…';
@@ -532,10 +536,11 @@ async function joinEvent(id) {
     return;
   }
 
-  // Mise à jour immédiate de l’interface.
+  // Mise à jour immédiate de l’interface : on réaffiche la sortie sans
+  // attendre une nouvelle lecture complète de Supabase.
   ev.count = Number(ev.count || 0) + 1;
-  closeModal();
   toast('Tu participes maintenant à la sortie 🎉');
+  await showEvent(id);
 
   // Synchronisation serveur en arrière-plan.
   await loadEvents();
