@@ -1101,19 +1101,28 @@ async function showProfile() {
   var p = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
   var profile = p.data || {};
   var mine = allEvents.filter(function(e){return e.creator_id === currentUser.id;});
-  var joinedCount = 0;
-  if (sb) {
-    var jr = await sb.from('event_participants').select('event_id').eq('user_id',currentUser.id);
-    joinedCount = jr.error ? 0 : (jr.data || []).length;
-  }
-  var avatar = profile.avatar_url ? '<img src="'+esc(profile.avatar_url)+'" alt="Photo de profil" style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 8px 24px rgba(60,35,100,.15)">' : '<div style="width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-size:30px;font-weight:800">'+esc(((profile.full_name||profile.username||'A').charAt(0)).toUpperCase())+'</div>';
+  var jr = await sb.from('event_participants').select('event_id').eq('user_id',currentUser.id);
+  var joinedCount = jr.error ? 0 : (jr.data || []).length;
+
+  var fields = [profile.full_name, profile.username, profile.city, profile.avatar_url, profile.bio, profile.interests];
+  var completed = fields.filter(Boolean).length;
+  var completion = Math.round((completed / fields.length) * 100);
+  var avatar = profile.avatar_url
+    ? '<img src="'+esc(profile.avatar_url)+'" alt="Photo de profil" style="width:92px;height:92px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 8px 24px rgba(60,35,100,.15)">'
+    : '<div style="width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--p),var(--p2));color:white;font-size:34px;font-weight:800">'+esc(((profile.full_name||profile.username||'A').charAt(0)).toUpperCase())+'</div>';
+
   document.getElementById('app').innerHTML =
-    '<div class="wrap"><section class="section"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">' +
+    '<div class="wrap"><section class="section">' +
+    '<div class="card" style="overflow:hidden"><div class="body">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">' +
     '<div style="display:flex;align-items:center;gap:18px">'+avatar+'<div><span class="pill">MON ESPACE</span><h2 style="margin:10px 0 3px">'+esc(profile.full_name || 'Membre Team Paiya')+'</h2><div class="muted">@'+esc(profile.username || 'membre')+' · '+esc(profile.city || 'Lille')+'</div></div></div>' +
     '<button class="primary" onclick="editProfile()">✏️ Modifier mon profil</button></div>' +
-    '<div class="kpis" style="margin-top:24px"><div class="kpi"><strong>'+mine.length+'</strong><span>sortie(s) créée(s)</span></div><div class="kpi"><strong>'+joinedCount+'</strong><span>participation(s)</span></div><div class="kpi"><strong>'+esc(profile.city || 'Lille')+'</strong><span>ville</span></div></div>' +
-    '<div class="card" style="margin-top:24px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(profile.bio || 'Ajoute une petite bio pour te présenter à la Team Paiya.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(profile.interests || 'À compléter')+'</div></div></div>' +
-    '<section class="section"><div class="section-head"><div><h2>Mes sorties créées</h2></div><button class="primary" onclick="openCreate()">+ Créer</button></div><div class="grid">' +
+    '<div style="margin-top:22px"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:7px"><span>Profil complété</span><span>'+completion+'%</span></div><div style="height:8px;background:#eee;border-radius:99px;overflow:hidden"><div style="width:'+completion+'%;height:100%;background:linear-gradient(90deg,var(--p),var(--p2));border-radius:99px"></div></div>' +
+    (completion < 100 ? '<div class="muted" style="margin-top:8px;font-size:12px">Complète ton profil pour mieux te présenter à la Team Paiya.</div>' : '<div style="margin-top:8px;font-size:12px;font-weight:700">✨ Ton profil est complet.</div>') +
+    '</div></div></div>' +
+    '<div class="kpis" style="margin-top:20px"><div class="kpi"><strong>'+mine.length+'</strong><span>sortie(s) créée(s)</span></div><div class="kpi"><strong>'+joinedCount+'</strong><span>participation(s)</span></div><div class="kpi"><strong>'+esc(profile.city || 'Lille')+'</strong><span>ville</span></div></div>' +
+    '<div class="card" style="margin-top:20px"><div class="body"><h3>À propos</h3><p class="muted" style="white-space:pre-wrap">'+esc(profile.bio || 'Ajoute une petite bio pour te présenter à la Team Paiya.')+'</p><div class="muted"><strong>Centres d’intérêt :</strong> '+esc(profile.interests || 'À compléter')+'</div></div></div>' +
+    '<section class="section"><div class="section-head"><div><h2>Mes sorties créées</h2><p class="muted">Les sorties que tu as organisées.</p></div><button class="primary" onclick="openCreate()">+ Créer</button></div><div class="grid">' +
     (mine.length ? mine.map(card).join('') : '<div class="empty" style="grid-column:1/-1">Tu n’as encore créé aucune sortie.</div>') +
     '</div></section></section></div>';
 }
