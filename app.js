@@ -262,6 +262,58 @@ async function showFavorites(){
   document.getElementById('app').innerHTML='<div class="wrap"><section class="section"><div class="section-head"><div><h2>❤️ Mes favoris</h2><div class="muted">Les sorties que tu veux garder de côté.</div></div><button class="primary" onclick="showExplore()">Explorer</button></div><div class="grid">'+(list.length?list.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Aucun favori pour le moment.<br>Explore les sorties et ajoute-les avec ❤️.</div>')+'</div></section></div>';
 }
 
+async function showMyOutings() {
+  if (!currentUser || !sb) { openAuth('login'); return; }
+
+  try {
+    var joinedIds = [];
+    var jr = await sb.from('event_participants').select('event_id').eq('user_id',currentUser.id);
+    if (jr.error) {
+      console.error('Mes sorties - participants:', jr.error);
+      toast('Impossible de charger tes participations.');
+      return;
+    }
+
+    joinedIds = (jr.data || []).map(function(x){ return String(x.event_id); });
+    var seen = {};
+    var list = [];
+
+    allEvents.forEach(function(e) {
+      var isCreator = e.creator_id === currentUser.id;
+      var isJoined = joinedIds.indexOf(String(e.id)) !== -1;
+      if ((isCreator || isJoined) && !seen[String(e.id)]) {
+        seen[String(e.id)] = true;
+        list.push(e);
+      }
+    });
+
+    list.sort(function(a,b) {
+      return String(a.event_date || '').localeCompare(String(b.event_date || '')) ||
+        String(a.event_time || '').localeCompare(String(b.event_time || ''));
+    });
+
+    var cards = list.map(function(e) {
+      var isCreator = e.creator_id === currentUser.id;
+      return '<div style="position:relative">' +
+        '<div style="margin-bottom:8px"><span class="pill">' + (isCreator ? '👑 Organisateur' : '✅ Participant') + '</span></div>' +
+        card(e) +
+        '</div>';
+    }).join('');
+
+    document.getElementById('app').innerHTML =
+      '<div class="wrap"><section class="section">' +
+      '<div class="section-head"><div><h2>🎟️ Mes sorties</h2><div class="muted">' +
+      list.length + ' sortie(s) dans ton agenda.</div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" onclick="showExplore()">Explorer</button><button class="primary" onclick="openCreate()">+ Créer</button></div></div>' +
+      '<div class="grid">' +
+      (cards || '<div class="empty" style="grid-column:1/-1">Tu n’as encore aucune sortie.<br>Explore les sorties ou crée la tienne 🎉.</div>') +
+      '</div></section></div>';
+  } catch (e) {
+    console.error('Mes sorties:', e);
+    toast('Impossible de charger tes sorties.');
+  }
+}
+
 function openAuth(mode) {
   openModal('<div class="modal-head"><div><h2 style="margin:0">' +
     (mode === 'login' ? 'Bon retour 👋' : 'Bienvenue dans Team Paiya 🎉') +
