@@ -1070,6 +1070,17 @@ async function createEvent(ev) {
       console.error('Diffusion nouvelle sortie:', notificationError);
     }
 
+    // Envoi des emails via Supabase Edge Function + Resend.
+    // La fonction utilise la session de l'utilisateur pour vérifier qu'il est bien le créateur.
+    try {
+      var emailResult = await sb.functions.invoke('send-new-event-email', {
+        body: { event_id: eventId }
+      });
+      if (emailResult.error) console.error('Email nouvelle sortie:', emailResult.error);
+    } catch (emailError) {
+      console.error('Envoi email nouvelle sortie:', emailError);
+    }
+
     // Confirmation immédiate : l'utilisateur voit sa sortie sans attendre les traitements secondaires.
     closeModal();
     window.creatingEvent = false;
