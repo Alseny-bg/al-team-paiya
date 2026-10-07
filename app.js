@@ -368,6 +368,7 @@ async function showEvent(id) {
   // participants/avis ne doivent pas donner l'impression que le bouton ne répond pas.
   openModal('<div style="padding:28px;text-align:center"><div style="font-size:34px">⏳</div><h3 style="margin:12px 0 6px">Chargement de la sortie…</h3><div class="muted">Récupération des participants et des informations.</div></div>');
 
+  try {
   var participants = [];
   var joined = false;
   if (sb) {
@@ -464,6 +465,11 @@ async function showEvent(id) {
       L.marker([pos.lat,pos.lng]).addTo(map).bindPopup('<strong>'+esc(e.title)+'</strong><br>'+esc(e.place)+' · '+esc(e.city)).openPopup();
       setTimeout(function(){map.invalidateSize();},150);
     },100);
+  }
+  } catch (error) {
+    console.error('showEvent:', error);
+    openModal('<div style="padding:28px;text-align:center"><div style="font-size:34px">⚠️</div><h3 style="margin:12px 0 6px">Impossible de charger cette sortie</h3><div class="muted">Vérifie ta connexion puis réessaie.</div><button class="primary" style="margin-top:16px" onclick="closeModal()">Fermer</button></div>');
+    toast('Impossible de charger les détails de la sortie.');
   }
 }
 async function openInviteMembers(eventId) {
