@@ -175,18 +175,29 @@ async function renderExploreMap() {
   if(paiyaMap) { paiyaMap.remove(); paiyaMap=null; }
   paiyaMap=L.map(el).setView([50.6292,3.0573],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(paiyaMap);
-  var list=allEvents.filter(function(e){return currentFilter==='Tous'||e.category===currentFilter;}).filter(function(e){return !currentQuery||[e.title,e.place,e.city,e.description].join(' ').toLowerCase().indexOf(currentQuery.toLowerCase())!==-1;});
+
+  // La carte utilise exactement les mêmes filtres que la liste.
+  var list=allEvents.filter(function(e){
+    var text=[e.title,e.place,e.city,e.description].join(' ').toLowerCase();
+    return (currentFilter==='Tous'||e.category===currentFilter) &&
+      (!currentQuery||text.indexOf(currentQuery.toLowerCase())!==-1) &&
+      (!advancedCity||String(e.city||'').toLowerCase().includes(advancedCity.toLowerCase())) &&
+      (!advancedDate||e.event_date===advancedDate) &&
+      (advancedPlace==='Tous'||e.place===advancedPlace) &&
+      (!favoritesOnly||favoriteIds.has(e.id));
+  });
+
   var bounds=[];
   for(var i=0;i<Math.min(list.length,20);i++){
     var e=list[i];
     var pos=(e.latitude&&e.longitude)?{lat:Number(e.latitude),lng:Number(e.longitude)}:await geocodePlace(e.place,e.city);
-    if(!pos) pos={lat:50.6292,lng:3.0573};
-    L.marker([pos.lat,pos.lng]).addTo(paiyaMap).bindPopup('<strong>'+esc(e.title)+'</strong><br>'+esc(e.place)+' · '+esc(e.city));
+    if(!pos) continue;
+    L.marker([pos.lat,pos.lng]).addTo(paiyaMap)
+      .bindPopup('<strong>'+esc(e.title)+'</strong><br>'+esc(e.place)+' · '+esc(e.city));
     bounds.push([pos.lat,pos.lng]);
   }
   if(bounds.length) paiyaMap.fitBounds(bounds,{padding:[30,30],maxZoom:14});
 }
-
 function checkGalleryVisibility() {
   var section=document.getElementById('teamPaiyaGallerySection');
   if(!section) return;
