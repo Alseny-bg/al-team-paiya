@@ -217,9 +217,9 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   <div class="brand"><div class="logo">AL</div><span>AL Team Paiya</span></div>
   <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu" onclick="toggleMobileMenu()">☰</button>
   <div class="navlinks">
-    <button onclick="showHome()">Accueil</button><button onclick="showExplore()">Explorer</button><button onclick="openCreate()">Créer une sortie</button>
+    <button type="button" data-nav="showHome" onclick="showHome()">Accueil</button><button type="button" data-nav="showExplore" onclick="showExplore()">Explorer</button><button type="button" data-nav="openCreate" onclick="openCreate()">Créer une sortie</button>
   </div>
-  <div id="authNav"><button class="ghost" onclick="openAuth('login')">Se connecter</button><button class="primary" onclick="openAuth('signup')">S'inscrire</button></div>
+  <div id="authNav"><button type="button" class="ghost" data-nav="openAuth" onclick="openAuth('login')">Se connecter</button><button class="primary" onclick="openAuth('signup')">S'inscrire</button></div>
 </div>
 <div id="mobileMenu" class="mobile-menu">
   <div class="mobile-menu-head"><strong>Menu</strong><button type="button" onclick="toggleMobileMenu()">×</button></div>
