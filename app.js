@@ -333,7 +333,6 @@ async function loadEvents() {
     if (result.error) {
       console.error('Lecture events:', result.error);
       toast('Erreur Supabase : ' + (result.error.message || 'lecture des sorties impossible'));
-      allEvents = [];
       return;
     }
     var rows = result.data || [];
@@ -347,7 +346,6 @@ async function loadEvents() {
     allEvents = rows.map(function(e){ e.count = counts[e.id] || 0; return e; });
   } catch(e) {
     console.error('Supabase:',e);
-    allEvents = [];
     toast('Erreur de connexion aux sorties : ' + (e.message || e));
   }
 }
@@ -542,15 +540,16 @@ async function joinEvent(id) {
   toast('Tu participes maintenant à la sortie 🎉');
   await showEvent(id);
 
-  // Synchronisation serveur en arrière-plan.
-  await loadEvents();
+  // Synchronisation serveur en arrière-plan : l’interface est déjà à jour.
+  loadEvents().catch(function(err){ console.warn('Synchronisation sortie:',err); });
 
   if (ev.creator_id) {
-    await addNotification(ev.creator_id,currentUser.id,id,'join','Quelqu’un a rejoint ta sortie « '+ev.title+' » 🎉');
+    addNotification(ev.creator_id,currentUser.id,id,'join','Quelqu’un a rejoint ta sortie « '+ev.title+' » 🎉')
+      .then(refreshNotificationBadge)
+      .catch(function(err){ console.warn('Notification:',err); });
+  } else {
+    refreshNotificationBadge();
   }
-
-  refreshNotificationBadge();
-  await showEvent(id);
 }
 
 
