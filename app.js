@@ -1037,6 +1037,27 @@ async function createEvent(ev) {
 
     var eventId = r.data.id;
 
+    // Notifie tous les membres inscrits qu'une nouvelle sortie vient d'être créée.
+    // Le créateur est automatiquement exclu de la diffusion.
+    try {
+      var members = await sb.from('profiles').select('id').neq('id', currentUser.id);
+      if (!members.error && members.data && members.data.length) {
+        var notifications = members.data.map(function(member) {
+          return {
+            user_id: member.id,
+            actor_id: currentUser.id,
+            event_id: eventId,
+            type: 'new_event',
+            message: '🎉 Nouvelle sortie créée : « ' + payload.title + ' ». Découvre-la et rejoins-nous si tu veux !'
+          };
+        });
+        var notificationResult = await sb.from('notifications').insert(notifications);
+        if (notificationResult.error) console.error('Notifications nouvelle sortie:', notificationResult.error);
+      }
+    } catch (notificationError) {
+      console.error('Diffusion nouvelle sortie:', notificationError);
+    }
+
     // Confirmation immédiate : l'utilisateur voit sa sortie sans attendre les traitements secondaires.
     closeModal();
     window.creatingEvent = false;
