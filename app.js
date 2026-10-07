@@ -333,6 +333,11 @@ function openAuth(mode) {
     (mode === 'login' ? 'Bon retour 👋' : 'Bienvenue dans Team Paiya 🎉') +
     '</h2><div class="muted">' + (mode === 'login' ? 'Connecte-toi pour rejoindre des sorties.' : 'Crée ton compte gratuitement.') +
     '</div></div><button class="close" onclick="closeModal()">×</button></div>' +
+    '<div style="display:grid;gap:9px;margin-top:18px">' +
+    '<button type="button" class="social-auth-btn google" onclick="signInWithProvider(\'google\')">🔵 Continuer avec Google</button>' +
+    '<button type="button" class="social-auth-btn apple" onclick="signInWithProvider(\'apple\')"> Continuer avec Apple</button>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;margin:17px 0;color:#8a8493;font-size:12px"><span style="height:1px;background:var(--line);flex:1"></span><span>OU AVEC TON EMAIL</span><span style="height:1px;background:var(--line);flex:1"></span></div>' +
     '<form class="form" onsubmit="authSubmit(event,\'' + mode + '\')">' +
     (mode === 'signup' ? '<label>Nom complet<input id="fullName" required placeholder="Ex. Alseny Bangoura"></label><label>Pseudo<input id="username" required placeholder="Ex. Alseny"></label>' : '') +
     '<label>Email<input id="email" type="email" required placeholder="ton@email.com"></label>' +
@@ -340,6 +345,26 @@ function openAuth(mode) {
     '<button class="primary" type="submit">' + (mode === 'login' ? 'Se connecter' : 'Créer mon compte') + '</button>' +
     '<button type="button" class="ghost" onclick="openAuth(\'' + (mode === 'login' ? 'signup' : 'login') + '\')">' +
     (mode === 'login' ? 'Créer un compte' : 'J’ai déjà un compte') + '</button></form>');
+}
+
+async function signInWithProvider(provider) {
+  if (!sb) { toast('Connexion aux données indisponible.'); return false; }
+  try {
+    var result = await sb.auth.signInWithOAuth({
+      provider: provider,
+      options: { redirectTo: window.location.origin }
+    });
+    if (result.error) {
+      console.error('OAuth '+provider+':', result.error);
+      toast(result.error.message || 'Connexion impossible avec '+provider+'.');
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('OAuth '+provider+':', e);
+    toast(e && e.message ? e.message : 'Une erreur est survenue.');
+    return false;
+  }
 }
 
 async function authSubmit(ev,mode) {
