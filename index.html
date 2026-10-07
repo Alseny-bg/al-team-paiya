@@ -253,31 +253,17 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
-<script src="app.js?v=20261007-2"></script>
-
-</script>
+<script src="app.js?v=20261007-3"></script>
 <script>
-function toggleMobileMenu(){
-  var m=document.getElementById('mobileMenu');
-  if(m)m.classList.toggle('show');
-}
-function closeMobileMenu(){
-  var m=document.getElementById('mobileMenu');
-  if(m)m.classList.remove('show');
-}
-document.addEventListener('click',function(e){
-  var m=document.getElementById('mobileMenu');
-  var b=document.getElementById('mobileMenuBtn');
-  if(m&&m.classList.contains('show')&&!m.contains(e.target)&&e.target!==b)m.classList.remove('show');
-});
-</script><script>
 (function(){
-  window.toggleMobileMenu=function(){var m=document.getElementById("mobileMenu");if(m){m.classList.toggle("show");}};
-  window.closeMobileMenu=function(){var m=document.getElementById("mobileMenu");if(m)m.classList.remove("show");};
-  document.addEventListener("click",function(e){
-    var m=document.getElementById("mobileMenu"),b=document.getElementById("mobileMenuBtn");
-    if(m&&m.classList.contains("show")&&!m.contains(e.target)&&e.target!==b)m.classList.remove("show");
-  });
+  window.toggleMobileMenu=function(){
+    var menu=document.getElementById('mobileMenu');
+    if(menu) menu.classList.toggle('show');
+  };
+  window.closeMobileMenu=function(){
+    var menu=document.getElementById('mobileMenu');
+    if(menu) menu.classList.remove('show');
+  };
 })();
 </script>
 </body>
