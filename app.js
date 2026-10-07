@@ -523,7 +523,7 @@ async function showEvent(id) {
         mapBlock +
         '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">👥 Participants</h3><span class="pill">'+e.count+'/'+e.max_participants+'</span></div><div style="margin-top:8px">'+participantHtml+'</div></div></div>' +
         '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
-        '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + reviewButton + button + ratingHtml +
+        '<button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + (currentUser && e.creator_id === currentUser.id ? '<button class="ghost" style="width:100%;margin-top:10px" onclick="editEvent(\\\''+id+'\\\')">✏️ Modifier la sortie</button>' : '') + reviewButton + button + ratingHtml +
       '</div>' +
     '</div>'
   );
@@ -602,6 +602,45 @@ async function submitReview(ev,eventId){
   var r=await sb.rpc('upsert_event_review',{p_event_id:eventId,p_rating:payload.rating,p_comment:payload.comment});
   if(r.error){toast('Impossible d’enregistrer ton avis : '+r.error.message);return;}
   closeModal(); toast('Merci pour ton avis ⭐'); await showEvent(eventId);
+}
+async function editEvent(id) {
+  if (!currentUser || !sb) { openAuth('login'); return; }
+  var e = allEvents.find(function(x){ return String(x.id) === String(id); });
+  if (!e || e.creator_id !== currentUser.id) { toast('Seul le créateur peut modifier cette sortie.'); return; }
+  openModal('<div class="modal-head"><div><h2 style="margin:0">Modifier la sortie</h2><div class="muted">Mets à jour les informations de ta sortie.</div></div><button class="close" onclick="closeModal()">×</button></div>' +
+    '<form class="form" onsubmit="saveEventEdit(event,\''+id+'\')">' +
+    '<label>Nom de la sortie<input id="editTitle" required value="'+esc(e.title||'')+'"></label>' +
+    '<label>Catégorie<select id="editCategory">'+categories.slice(1).map(function(c){return '<option '+(c===e.category?'selected':'')+'>'+esc(c)+'</option>';}).join('')+'</select></label>' +
+    '<label>Lieu<input id="editPlace" required value="'+esc(e.place||'')+'"></label>' +
+    '<div class="two"><label>Ville<input id="editCity" required value="'+esc(e.city||'Lille')+'"></label><label>Participants max<input id="editMax" type="number" min="'+Math.max(2,Number(e.count||0))+'" value="'+Number(e.max_participants||10)+'" required></label></div>' +
+    '<div class="two"><label>Date<input id="editDate" type="date" value="'+esc(e.event_date||'')+'" required></label><label>Heure<input id="editTime" type="time" value="'+esc(e.event_time||'')+'" required></label></div>' +
+    '<label>Description<textarea id="editDescription">'+esc(e.description||'')+'</textarea></label>' +
+    '<label>Adresse du lieu<input id="editAddress" value="'+esc(e.location_address||'')+'" placeholder="Optionnel"></label>' +
+    '<button class="primary" type="submit">Enregistrer les modifications</button></form>' +
+    '<button class="ghost danger" style="width:100%;margin-top:10px" onclick="deleteEvent(\''+id+'\')">🗑️ Supprimer cette sortie</button>');
+}
+async function saveEventEdit(ev,id) {
+  if (ev) ev.preventDefault();
+  if (!currentUser || !sb) return;
+  var e = allEvents.find(function(x){ return String(x.id) === String(id); });
+  if (!e || e.creator_id !== currentUser.id) return;
+  var payload = {title:document.getElementById('editTitle').value.trim(),category:document.getElementById('editCategory').value,place:document.getElementById('editPlace').value.trim(),city:document.getElementById('editCity').value.trim(),max_participants:Number(document.getElementById('editMax').value),event_date:document.getElementById('editDate').value,event_time:document.getElementById('editTime').value,description:document.getElementById('editDescription').value.trim(),location_address:document.getElementById('editAddress').value.trim()||null};
+  if (!payload.title || !payload.place || !payload.city || !payload.event_date || !payload.event_time) { toast('Complète les informations obligatoires.'); return; }
+  if (payload.max_participants < Number(e.count||0)) { toast('Le nombre maximum ne peut pas être inférieur aux participants actuels.'); return; }
+  var r = await sb.from('events').update(payload).eq('id',id).eq('creator_id',currentUser.id);
+  if (r.error) { toast('Impossible de modifier la sortie : '+r.error.message); return; }
+  Object.assign(e,payload);
+  closeModal(); toast('Sortie modifiée ✨'); await loadEvents(); showExplore();
+}
+async function deleteEvent(id) {
+  if (!currentUser || !sb) return;
+  var e = allEvents.find(function(x){ return String(x.id) === String(id); });
+  if (!e || e.creator_id !== currentUser.id) { toast('Seul le créateur peut supprimer cette sortie.'); return; }
+  if (!confirm('Supprimer définitivement « '+e.title+' » ? Cette action est irréversible.')) return;
+  var r = await sb.from('events').delete().eq('id',id).eq('creator_id',currentUser.id);
+  if (r.error) { toast('Impossible de supprimer la sortie : '+r.error.message); return; }
+  allEvents = allEvents.filter(function(x){ return String(x.id) !== String(id); });
+  closeModal(); toast('Sortie supprimée.'); showMyOutings();
 }
 async function joinEvent(id) {
   if (!currentUser) { closeModal(); openAuth('login'); return; }
