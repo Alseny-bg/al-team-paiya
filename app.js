@@ -125,7 +125,7 @@ function showHome() {
     '<article class="card"><div class="body"><span class="pill">03</span><h3>🎉 Profite du moment</h3><div class="muted">Retrouve les participants.</div></div></article></div></section>' +
     '<section class="section"><div class="section-head"><div><h2>Les prochaines sorties</h2><div class="muted">Les bons plans du moment</div></div><button class="ghost" onclick="showExplore()">Tout voir →</button></div>' +
     '<div class="grid">' + (featured.length ? featured.map(card).join('') : '<div class="empty" style="grid-column:1/-1">Aucune sortie pour le moment. Sois le premier à en créer une !</div>') + '</div></section>' +
-    "\n<section class=\"section\">\n  <div class=\"section-head\">\n    <div><h2>📸 Les moments Team Paiya</h2><div class=\"muted\">Quelques souvenirs de nos sorties.</div></div>\n  </div>\n  <div class=\"gallery-grid\">\n    <button class=\"gallery-item\" onclick=\"openGallery(1)\"><img src=\"photo-1.jpg\" alt=\"Moment Team Paiya 1\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(2)\"><img src=\"photo-2.jpg\" alt=\"Moment Team Paiya 2\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(3)\"><img src=\"photo-3.jpg\" alt=\"Moment Team Paiya 3\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(4)\"><img src=\"photo-4.jpg\" alt=\"Moment Team Paiya 4\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(5)\"><img src=\"photo-5.jpg\" alt=\"Moment Team Paiya 5\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(6)\"><img src=\"photo-6.jpg\" alt=\"Moment Team Paiya 6\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(7)\"><img src=\"photo-7.jpg\" alt=\"Moment Team Paiya 7\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(8)\"><img src=\"photo-8.jpg\" alt=\"Moment Team Paiya 8\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(9)\"><img src=\"photo-9.jpg\" alt=\"Moment Team Paiya 9\" loading=\"lazy\"></button><button class=\"gallery-item\" onclick=\"openGallery(10)\"><img src=\"photo-10.jpg\" alt=\"Moment Team Paiya 10\" loading=\"lazy\"></button>\n  </div>\n</section>" +
+    "\\n<section class=\\"section\\" id=\\"teamPaiyaGallerySection\\">\\n  <div class=\\"section-head\\">\\n    <div><h2>📸 Les moments Team Paiya</h2><div class=\\"muted\\">Quelques souvenirs de nos sorties.</div></div>\\n  </div>\\n  <div class=\\"gallery-grid\\">\\n    <button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(1)\"><img src=\"photo-1.jpg\" alt=\"Moment Team Paiya 1\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(2)\"><img src=\"photo-2.jpg\" alt=\"Moment Team Paiya 2\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(3)\"><img src=\"photo-3.jpg\" alt=\"Moment Team Paiya 3\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(4)\"><img src=\"photo-4.jpg\" alt=\"Moment Team Paiya 4\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(5)\"><img src=\"photo-5.jpg\" alt=\"Moment Team Paiya 5\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(6)\"><img src=\"photo-6.jpg\" alt=\"Moment Team Paiya 6\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(7)\"><img src=\"photo-7.jpg\" alt=\"Moment Team Paiya 7\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(8)\"><img src=\"photo-8.jpg\" alt=\"Moment Team Paiya 8\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(9)\"><img src=\"photo-9.jpg\" alt=\"Moment Team Paiya 9\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button><button class=\"gallery-item\" type=\"button\" onclick=\"openGallery(10)\"><img src=\"photo-10.jpg\" alt=\"Moment Team Paiya 10\" loading=\"lazy\" onerror=\"this.closest('.gallery-item').remove();checkGalleryVisibility()\"></button>\\n  </div>\\n</section></section>" +
     '</div>';
 }
 
@@ -187,7 +187,15 @@ async function renderExploreMap() {
   if(bounds.length) paiyaMap.fitBounds(bounds,{padding:[30,30],maxZoom:14});
 }
 
+function checkGalleryVisibility() {
+  var section=document.getElementById('teamPaiyaGallerySection');
+  if(!section) return;
+  var items=section.querySelectorAll('.gallery-item');
+  section.style.display=items.length ? '' : 'none';
+}
+
 function openGallery(number) {
+  var src='photo-'+number+'.jpg';
   var overlay=document.getElementById('galleryOverlay');
   if(!overlay){
     overlay=document.createElement('div');
@@ -197,7 +205,9 @@ function openGallery(number) {
     overlay.innerHTML='<div class="gallery-view"><button class="gallery-close" onclick="closeGallery()">×</button><img id="galleryImage" alt="Moment Team Paiya"></div>';
     document.body.appendChild(overlay);
   }
-  document.getElementById('galleryImage').src='photo-'+number+'.jpg';
+  var image=document.getElementById('galleryImage');
+  image.onerror=function(){closeGallery(); checkGalleryVisibility();};
+  image.src=src;
   overlay.classList.add('show');
 }
 function closeGallery(){
