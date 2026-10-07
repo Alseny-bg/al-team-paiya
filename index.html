@@ -215,11 +215,11 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 .social-auth-btn{width:100%;min-height:48px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#171321;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}.social-auth-btn:hover{background:#f8f6fb;border-color:#d9d1e7;transform:translateY(-1px)}.social-auth-btn.apple{background:#171321;color:#fff;border-color:#171321}.social-auth-btn.apple:hover{background:#000}
 
 .status-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}.status-badge.available{background:#ecfdf5;color:#047857}.status-badge.soon{background:#fff7ed;color:#c2410c}.status-badge.full{background:#fef2f2;color:#b91c1c}.status-badge.past{background:#f3f4f6;color:#6b7280}
-`.footer-link{display:block;border:0;background:none;padding:7px 0;text-align:left;color:#6b6476;cursor:pointer}.footer-link:hover{color:var(--p)} @media(max-width:700px){footer .wrap>div:first-child{grid-template-columns:1fr 1fr!important;gap:20px!important}}</style></head>
+`.footer-link{display:block;border:0;background:none;padding:7px 0;text-align:left;color:#6b6476;cursor:pointer}.footer-link:hover{color:var(--p)} @media(max-width:700px){footer .wrap>div:first-child{grid-template-columns:1fr 1fr!important;gap:20px!important}}.dark-mode{--ink:#f5f3f8;--muted:#bdb6ca;--bg:#111015;--card:#1b1820;--line:#332d3b} .dark-mode header{background:rgba(17,16,21,.9)}.dark-mode .card,.dark-mode .modal-box,.dark-mode .empty,.dark-mode .mobile-menu{background:#1b1820}.dark-mode .ghost,.dark-mode .filter,.dark-mode .tab,.dark-mode .form input,.dark-mode .form textarea,.dark-mode .form select,.dark-mode .search input{background:#211d27;color:var(--ink);border-color:var(--line)}.dark-mode .mobile-menu>button{background:#211d27;color:var(--ink)}.high-contrast{--p:#8b5cf6;--p2:#a78bfa}.high-contrast body{filter:contrast(1.12)}.large-text{font-size:110%}.large-text .hero h1{font-size:57px}.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.dark-mode .cover span{background:#211d27dd;color:#fff}.dark-mode .modal{background:#000b}.dark-mode .footer-link{color:#bdb6ca}.footer-link{display:block;border:0;background:none;padding:7px 0;text-align:left;color:#6b6476;cursor:pointer}.footer-link:hover{color:var(--p)} @media(max-width:700px){footer .wrap>div:first-child{grid-template-columns:1fr 1fr!important;gap:20px!important}} </style></head>
 <body>
 <header><div class="wrap nav">
-  <div class="brand"><div class="logo">AL</div><span>AL Team Paiya</span></div>
-  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu" onclick="toggleMobileMenu()">☰</button>
+  <div class="brand"><div class="logo">AL</div><span id="brandName">AL Team Paiya</span></div>
+  <button id="accessibilityBtn" class="ghost" type="button" aria-label="Accessibilité" onclick="openAccessibility()">⚙️</button><button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Menu" onclick="toggleMobileMenu()">☰</button>
   <div class="navlinks">
     <button type="button" onclick="showHome()">Accueil</button><button type="button" onclick="showExplore()">Explorer</button><button type="button" onclick="openCreate()">Créer une sortie</button>
   </div>
@@ -237,7 +237,7 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 <main id="app">
   <div class="wrap">
-    <section class="hero">
+    <section class="hero" id="heroText">
       <div>
         <span class="pill">✨ La plateforme des sorties entre amis</span>
         <h1>On sort ?<br><span>Team Paiya.</span></h1>
@@ -258,14 +258,14 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 <footer><div class="wrap">
   <div style="display:grid;grid-template-columns:2fr repeat(3,1fr);gap:28px;padding:35px 0 25px">
     <div><strong style="font-size:20px">AL Team Paiya</strong><p class="muted" style="line-height:1.6">Des sorties, des rencontres, des souvenirs.</p></div>
-    <div><strong>Découvrir</strong><button class="footer-link" onclick="showInfoPage('about')">À propos</button><button class="footer-link" onclick="showInfoPage('how')">Comment ça marche ?</button></div>
-    <div><strong>Aide</strong><button class="footer-link" onclick="showInfoPage('help')">Aide & FAQ</button><button class="footer-link" onclick="showInfoPage('safety')">Sécurité & règles</button></div>
-    <div><strong>Infos</strong><button class="footer-link" onclick="showInfoPage('terms')">Conditions</button><button class="footer-link" onclick="showInfoPage('privacy')">Confidentialité</button><button class="footer-link" onclick="showInfoPage('contact')">Nous contacter</button></div>
+    <div><strong>Découvrir</strong><button id="footerAbout" class="footer-link" onclick="showInfoPage('about')">À propos</button><button id="footerHow" class="footer-link" onclick="showInfoPage('how')">Comment ça marche ?</button></div>
+    <div><strong>Aide</strong><button id="footerHelp" class="footer-link" onclick="showInfoPage('help')">Aide & FAQ</button><button id="footerSafety" class="footer-link" onclick="showInfoPage('safety')">Sécurité & règles</button></div>
+    <div><strong>Infos</strong><button id="footerTerms" class="footer-link" onclick="showInfoPage('terms')">Conditions</button><button id="footerPrivacy" class="footer-link" onclick="showInfoPage('privacy')">Confidentialité</button><button id="footerContact" class="footer-link" onclick="showInfoPage('contact')">Nous contacter</button></div>
   </div>
   <div style="border-top:1px solid var(--line);padding:16px 0;color:#777">© 2026 AL Team Paiya · Tous droits réservés.</div>
 </div></footer>
 
-<script src="app.js?v=20261007-7"></script>
+<script src="app.js?v=20261007-8"></script>
 <script>
 (function(){
   window.toggleMobileMenu=function(){
