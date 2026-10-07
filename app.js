@@ -352,7 +352,7 @@ async function loadEvents() {
   }
 }
 
-async function showEvent(id) {
+async async function showEvent(id) {
   var e = allEvents.find(function(x){ return String(x.id) === String(id); });
   if (!e) return;
 
