@@ -256,31 +256,63 @@ function openAuth(mode) {
 }
 
 async function authSubmit(ev,mode) {
-  ev.preventDefault();
-  if (!sb) { toast('Connexion aux données indisponible.'); return; }
-  var email = document.getElementById('email').value;
-  var password = document.getElementById('password').value;
-  var result;
-  if (mode === 'signup') {
-    result = await sb.auth.signUp({email:email,password:password,options:{
-      data:{full_name:document.getElementById('fullName').value,username:document.getElementById('username').value},
-      emailRedirectTo:window.location.origin
-    }});
-  } else {
-    result = await sb.auth.signInWithPassword({email:email,password:password});
-  }
-  if (result.error) { toast(result.error.message); return; }
-  if (mode === 'signup' && !result.data.session) {
-    toast('Compte créé. Vérifie ton email.');
+  if (ev) ev.preventDefault();
+  var form = ev && ev.target ? ev.target : document.querySelector('#modalBox form');
+  if (!sb) { toast('Connexion aux données indisponible.'); return false; }
+  var emailEl = document.getElementById('email');
+  var passwordEl = document.getElementById('password');
+  if (!emailEl || !passwordEl) { toast('Le formulaire de connexion est incomplet.'); return false; }
+  var email = emailEl.value.trim();
+  var password = passwordEl.value;
+  var submit = form ? form.querySelector('button[type="submit"]') : null;
+  var originalText = submit ? submit.textContent : '';
+  try {
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = mode === 'login' ? 'Connexion…' : 'Création…';
+    }
+    var result;
+    if (mode === 'signup') {
+      var fullNameEl = document.getElementById('fullName');
+      var usernameEl = document.getElementById('username');
+      if (!fullNameEl || !usernameEl) throw new Error('Les informations du profil sont manquantes.');
+      result = await sb.auth.signUp({
+        email:email,
+        password:password,
+        options:{
+          data:{full_name:fullNameEl.value.trim(),username:usernameEl.value.trim()},
+          emailRedirectTo:window.location.origin
+        }
+      });
+    } else {
+      result = await sb.auth.signInWithPassword({email:email,password:password});
+    }
+    if (result.error) {
+      toast(result.error.message || 'Impossible de se connecter.');
+      return false;
+    }
+    if (mode === 'signup' && !result.data.session) {
+      toast('Compte créé. Vérifie ton email pour continuer.');
+      closeModal();
+      return true;
+    }
+    currentUser = result.data.user;
     closeModal();
-    return;
+    updateAuthNav();
+    await loadEvents();
+    showHome();
+    toast(mode === 'login' ? 'Connexion réussie !' : 'Compte créé avec succès !');
+    return true;
+  } catch (e) {
+    console.error('Erreur authentification', e);
+    toast(e && e.message ? e.message : 'Une erreur est survenue. Réessaie.');
+    return false;
+  } finally {
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = originalText;
+    }
   }
-  currentUser = result.data.user;
-  closeModal();
-  updateAuthNav();
-  await loadEvents();
-  showHome();
-  toast('Connexion réussie !');
 }
 
 async function logout() {
