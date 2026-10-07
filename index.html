@@ -256,6 +256,27 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 <script src="app.js?v=20261007-3"></script>
 <script>
 (function(){
+  function call(name){
+    if(typeof window[name]==='function'){
+      try{ window[name](); }catch(e){ console.error('Navigation '+name,e); }
+      return true;
+    }
+    return false;
+  }
+  document.addEventListener('click',function(e){
+    var el=e.target.closest && e.target.closest('[data-nav]');
+    if(!el) return;
+    var action=el.getAttribute('data-nav');
+    if(action && call(action)){
+      e.preventDefault();
+      var menu=document.getElementById('mobileMenu');
+      if(menu) menu.classList.remove('show');
+    }
+  },true);
+})();
+</script>
+<script>
+(function(){
   window.toggleMobileMenu=function(){
     var menu=document.getElementById('mobileMenu');
     if(menu) menu.classList.toggle('show');
