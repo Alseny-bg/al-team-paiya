@@ -777,12 +777,22 @@ async function openNotificationCenter() {
     var actions = '';
     if (n.type === 'invitation' && n.invitation_id) {
       actions = '<div style="display:flex;gap:8px;margin-top:10px"><button class="primary" data-inv="'+n.invitation_id+'" data-status="accepted" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">✓ Accepter</button><button class="ghost" data-inv="'+n.invitation_id+'" data-status="declined" onclick="respondInvitation(this.dataset.inv,this.dataset.status)">Refuser</button></div>';
+    } else if (n.event_id) {
+      actions = '<button class="primary" style="margin-top:10px" onclick="openNotificationEvent(\''+n.event_id+'\',\''+n.id+'\')">👀 Voir la sortie →</button>';
     }
     return '<div style="padding:14px 0;border-bottom:1px solid var(--line)"><div style="font-weight:700">'+esc(n.message)+'</div><div class="muted" style="font-size:12px;margin-top:4px">'+dateLabel(n.created_at.slice(0,10),n.created_at.slice(11,16))+'</div>'+actions+'</div>';
   }).join('') : '<div class="empty">Aucune notification.</div>';
   openModal('<div class="modal-head"><div><span class="pill">🔔 Notifications</span><h2 style="margin:10px 0 0">Tes notifications</h2></div><button class="close" onclick="closeModal()">×</button></div><div style="max-height:60vh;overflow:auto">'+html+'</div>');
   await sb.from('notifications').update({read:true}).eq('user_id',currentUser.id).eq('read',false);
   refreshNotificationBadge();
+}
+
+async function openNotificationEvent(eventId, notificationId) {
+  if (!currentUser || !sb || !eventId) return;
+  if (notificationId) await sb.from('notifications').update({read:true}).eq('id',notificationId).eq('user_id',currentUser.id);
+  refreshNotificationBadge();
+  closeModal();
+  await showEvent(eventId);
 }
 
 async function showNotifications() {
