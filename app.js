@@ -160,7 +160,7 @@ function showHome() {
     '<div class="search"><input id="homeSearch" placeholder="Restaurant, sport, Lille..." value="' + esc(currentQuery) + '">' +
     '<button class="primary" onclick="doSearch()">Rechercher</button></div>' +
     '</div><div class="hero-card"><span class="pill">TEAM PAIYA</span><h2>Plus de sorties.<br>Plus de rencontres.</h2>' +
-    '<p>Choisis une activité, regarde qui participe et rejoins automatiquement la sortie.</p>' +
+    '<p>Choisis une activité, regarde qui participe et rejoins la sortie en un clic.</p>' +
     '<button class="primary" style="background:white;color:#5b21b6" onclick="showExplore()">Explorer les sorties →</button></div></section>' +
     '<section class="section"><div class="section-head"><div><h2>Comment ça marche ?</h2><div class="muted">Simple, rapide, social.</div></div></div>' +
     '<div class="grid"><article class="card"><div class="body"><span class="pill">01</span><h3>🔎 Trouve une sortie</h3><div class="muted">Choisis une activité et regarde les prochaines sorties.</div></div></article>' +
@@ -1077,16 +1077,14 @@ async function createEvent(ev) {
       console.error('Diffusion nouvelle sortie:', notificationError);
     }
 
-    // Envoi des emails via Supabase Edge Function + Resend.
-    // La fonction utilise la session de l'utilisateur pour vérifier qu'il est bien le créateur.
-    try {
-      var emailResult = await sb.functions.invoke('send-new-event-email', {
-        body: { event_id: eventId }
-      });
-      if (emailResult.error) console.error('Email nouvelle sortie:', emailResult.error);
-    } catch (emailError) {
+    // Envoi des emails en arrière-plan : une erreur ou un délai Resend ne doit pas bloquer la création.
+    sb.functions.invoke('send-new-event-email', {
+      body: { event_id: eventId }
+    }).then(function(emailResult) {
+      if (emailResult && emailResult.error) console.error('Email nouvelle sortie:', emailResult.error);
+    }).catch(function(emailError) {
       console.error('Envoi email nouvelle sortie:', emailError);
-    }
+    });
 
     // Confirmation immédiate : l'utilisateur voit sa sortie sans attendre les traitements secondaires.
     closeModal();
