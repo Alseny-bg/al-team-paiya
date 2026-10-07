@@ -1205,6 +1205,86 @@ async function saveProfile() {
   toast('Profil mis à jour ✨');
 }
 
+
+function showInfoPage(type) {
+  var pages = {
+    about: {
+      title:'À propos de Team Paiya',
+      intro:'Team Paiya est une plateforme pensée pour découvrir, proposer et rejoindre facilement des sorties avec d’autres personnes.',
+      sections:[
+        ['Notre objectif','Créer un espace simple, convivial et pratique pour permettre aux personnes de se retrouver autour d’activités réelles : restaurant, cinéma, sport, soirée, jeux, voyage ou nature.'],
+        ['Une plateforme communautaire','Chacun peut découvrir les sorties proposées, rejoindre celles qui lui plaisent et créer ses propres activités.'],
+        ['Notre vision','Plus de sorties. Plus de rencontres. Plus de souvenirs.']
+      ]
+    },
+    how: {
+      title:'Comment ça marche ?',
+      intro:'En quelques étapes, trouve une sortie ou crée ton propre moment.',
+      sections:[
+        ['01 — Inscris-toi','Crée ton compte gratuitement et complète ton profil.'],
+        ['02 — Explore','Parcours les sorties et utilise les filtres pour trouver ce qui te correspond.'],
+        ['03 — Rejoins','Ouvre une sortie, regarde les informations et rejoins-la en un clic si des places sont disponibles.'],
+        ['04 — Crée','Tu ne trouves pas ce que tu cherches ? Crée ta propre sortie et rassemble ta Team.']
+      ]
+    },
+    help: {
+      title:'Aide & FAQ',
+      intro:'Les réponses aux questions les plus fréquentes.',
+      sections:[
+        ['Comment créer une sortie ?','Connecte-toi puis clique sur « Créer une sortie ». Renseigne le titre, la catégorie, le lieu, la date et le nombre de participants.'],
+        ['Puis-je modifier ma sortie ?','Oui. Le créateur peut modifier les informations ou supprimer sa sortie depuis sa page.'],
+        ['Puis-je quitter une sortie ?','Oui, ouvre la sortie concernée puis utilise l’option pour quitter.'],
+        ['Comment savoir si une sortie est complète ?','La sortie affiche son nombre de places disponibles et passe en statut « Complète » lorsque la limite est atteinte.'],
+        ['Comment fonctionnent les notifications ?','Team Paiya peut t’informer des nouvelles sorties et des activités liées à ton compte.'],
+        ['Un problème ?','Utilise la rubrique « Nous contacter » pour nous signaler un problème ou une question.']
+      ]
+    },
+    safety: {
+      title:'Sécurité & règles',
+      intro:'Team Paiya doit rester un espace respectueux et agréable pour tout le monde.',
+      sections:[
+        ['Respect','Aucun harcèlement, propos discriminatoires, menace ou comportement agressif n’est accepté.'],
+        ['Sorties','Avant de rejoindre une sortie, vérifie les informations et choisis des conditions de rencontre qui te conviennent.'],
+        ['Signalement','Si un contenu ou un comportement te semble problématique, contacte Team Paiya afin qu’il puisse être examiné.'],
+        ['Responsabilité','Team Paiya facilite la mise en relation. Chaque participant reste responsable de ses choix et de son comportement lors d’une sortie.']
+      ]
+    },
+    terms: {
+      title:'Conditions d’utilisation',
+      intro:'Les règles essentielles pour utiliser Team Paiya.',
+      sections:[
+        ['Utilisation du service','L’utilisateur s’engage à fournir des informations sincères et à utiliser Team Paiya de manière respectueuse.'],
+        ['Contenus','Les contenus publiés ne doivent pas être illégaux, trompeurs, offensants ou porter atteinte aux droits d’autrui.'],
+        ['Évolution du service','Team Paiya peut faire évoluer ses fonctionnalités afin d’améliorer l’expérience utilisateur.']
+      ]
+    },
+    privacy: {
+      title:'Confidentialité',
+      intro:'Nous voulons que les utilisateurs comprennent simplement comment leurs données sont utilisées.',
+      sections:[
+        ['Données de compte','Les informations nécessaires au compte et au fonctionnement de la plateforme peuvent être enregistrées.'],
+        ['Utilisation','Les données servent notamment à permettre la connexion, la gestion du profil, les sorties, les participations et les notifications.'],
+        ['Bon réflexe','Ne partage jamais ton mot de passe et évite de publier des informations personnelles sensibles dans une sortie.']
+      ]
+    },
+    contact: {
+      title:'Nous contacter',
+      intro:'Une question, un problème ou une suggestion ?',
+      sections:[
+        ['Besoin d’aide','Pour commencer, consulte la rubrique « Aide & FAQ ».'],
+        ['Suggestion','Tes retours peuvent aider Team Paiya à améliorer la plateforme.'],
+        ['Contact','Ajoute ici l’adresse email officielle de Team Paiya dès qu’elle sera définie.']
+      ]
+    }
+  };
+  var page = pages[type] || pages.about;
+  var html = '<section class="section"><div class="wrap" style="max-width:900px"><button class="ghost" onclick="showHome()" style="margin-bottom:18px">← Retour à l’accueil</button>' +
+    '<div class="pill">TEAM PAIYA</div><h1 style="font-size:42px;margin:14px 0 10px">'+esc(page.title)+'</h1><p class="muted" style="font-size:18px;line-height:1.7;max-width:760px">'+esc(page.intro)+'</p>' +
+    '<div style="display:grid;gap:14px;margin-top:28px">'+page.sections.map(function(s){return '<article style="padding:22px;border:1px solid var(--line);border-radius:16px;background:#fff"><h3 style="margin:0 0 8px">'+esc(s[0])+'</h3><p style="margin:0;line-height:1.7;color:#5f596b">'+esc(s[1])+'</p></article>';}).join('')+'</div></div></section>';
+  document.getElementById('app').innerHTML = html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 if (sb) {
   sb.auth.getSession().then(function(result) {
     currentUser = result.data && result.data.session ? result.data.session.user : null;
