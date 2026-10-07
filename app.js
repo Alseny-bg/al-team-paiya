@@ -120,14 +120,27 @@ function eventPhoto(event) {
 }
 function card(event) {
   var photo = eventPhoto(event);
+  var eventDate = new Date(event.event_date + 'T' + (event.event_time || '00:00'));
+  var isPast = eventDate.getTime() < Date.now();
+  var isFull = Number(event.count || 0) >= Number(event.max_participants || 0);
+  var remaining = Math.max(0, Number(event.max_participants || 0) - Number(event.count || 0));
+  var status = isPast
+    ? '<span class="status-badge past">Terminée</span>'
+    : isFull
+      ? '<span class="status-badge full">Complète</span>'
+      : remaining <= 2
+        ? '<span class="status-badge soon">Plus que '+remaining+' place'+(remaining>1?'s':'')+'</span>'
+        : '<span class="status-badge available">'+remaining+' places</span>';
+
   return '<article class="card">' +
     '<div class="cover"><img src="' + photo + '" alt="' + esc(event.title) + '" loading="lazy"><span>' + emoji(event.category) + ' ' + esc(event.category) + '</span></div>' +
     '<div class="body">' +
     '<div class="row"><span class="pill">' + esc(event.place) + '</span><span class="muted">' + esc(event.city) + '</span></div>' +
     '<h3>' + esc(event.title) + '</h3>' +
     '<div class="meta"><div>📅 ' + dateLabel(event.event_date,event.event_time) + '</div>' +
-    '<div>👤 ' + event.count + '/' + event.max_participants + ' participants</div><div>💜 Gratuit</div></div>' +
-    '<div style="display:flex;gap:8px;margin-top:14px"><button class="primary" style="flex:1" onclick="showEvent(\'' + event.id + '\')">Voir la sortie</button><button class="ghost" title="Ajouter aux favoris" style="font-size:18px;padding:8px 12px" onclick="toggleFavorite(\'' + event.id + '\');event.stopPropagation()">' + (favoriteIds.has(event.id) ? '❤️' : '♡') + '</button></div>' +
+    '<div>👥 ' + event.count + '/' + event.max_participants + ' participants</div><div>💜 Gratuit</div></div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px">' + status + '<button class="ghost" title="' + (favoriteIds.has(event.id) ? 'Retirer des favoris' : 'Ajouter aux favoris') + '" style="font-size:18px;padding:7px 11px" onclick="toggleFavorite(\'' + event.id + '\');event.stopPropagation()">' + (favoriteIds.has(event.id) ? '❤️' : '♡') + '</button></div>' +
+    '<button class="primary" style="width:100%;margin-top:10px" onclick="showEvent(\'' + event.id + '\')">' + (isPast ? 'Voir le récapitulatif' : 'Voir la sortie') + ' →</button>' +
     '</div></article>';
 }
 
