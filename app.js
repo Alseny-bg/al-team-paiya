@@ -64,11 +64,39 @@ function dateLabel(date, time) {
 
 function updateAuthNav() {
   var nav = document.getElementById('authNav');
-  if (!nav) return;
-  if (currentUser) {
-    nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showFavorites()">❤️ Favoris</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="openNotificationCenter()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
-  } else {
-    nav.innerHTML = '<button class="ghost" onclick="openAuth(\'login\')">Se connecter</button><button class="primary" onclick="openAuth(\'signup\')">S\'inscrire</button>';
+  if (nav) {
+    if (currentUser) {
+      nav.innerHTML = '<button class="ghost" onclick="showMyOutings()">Mes sorties</button><button class="ghost" onclick="showFavorites()">❤️ Favoris</button><button class="ghost" onclick="showMessages()">💬 Messages <span id="msgBadge" style="display:none"></span></button><button class="ghost" onclick="openNotificationCenter()">🔔 Notifications <span id="notifBadge" style="display:none"></span></button><button class="ghost" onclick="showProfile()">Mon profil</button><button class="primary" onclick="logout()">Déconnexion</button>';
+    } else {
+      nav.innerHTML = '<button class="ghost" onclick="openAuth(\'login\')">Se connecter</button><button class="primary" onclick="openAuth(\'signup\')">S\'inscrire</button>';
+    }
+  }
+
+  var mobile = document.getElementById('mobileMenu');
+  if (mobile) {
+    if (currentUser) {
+      mobile.innerHTML =
+        '<div class="mobile-menu-head"><strong>Mon espace</strong><button type="button" onclick="toggleMobileMenu()">×</button></div>' +
+        '<button onclick="closeMobileMenu();showHome()">🏠 Accueil</button>' +
+        '<button onclick="closeMobileMenu();showExplore()">🔎 Explorer</button>' +
+        '<button onclick="closeMobileMenu();openCreate()">➕ Créer une sortie</button>' +
+        '<button onclick="closeMobileMenu();showMyOutings()">🎟️ Mes sorties</button>' +
+        '<button onclick="closeMobileMenu();showFavorites()">❤️ Mes favoris</button>' +
+        '<button onclick="closeMobileMenu();showMessages()">💬 Messages</button>' +
+        '<button onclick="closeMobileMenu();openNotificationCenter()">🔔 Notifications</button>' +
+        '<button onclick="closeMobileMenu();showProfile()">👤 Mon profil</button>' +
+        '<div class="mobile-menu-sep"></div>' +
+        '<button onclick="closeMobileMenu();logout()">🚪 Déconnexion</button>';
+    } else {
+      mobile.innerHTML =
+        '<div class="mobile-menu-head"><strong>Menu</strong><button type="button" onclick="toggleMobileMenu()">×</button></div>' +
+        '<button onclick="closeMobileMenu();showHome()">🏠 Accueil</button>' +
+        '<button onclick="closeMobileMenu();showExplore()">🔎 Explorer</button>' +
+        '<button onclick="closeMobileMenu();openCreate()">➕ Créer une sortie</button>' +
+        '<div class="mobile-menu-sep"></div>' +
+        '<button onclick="closeMobileMenu();openAuth(\'login\')">🔐 Se connecter</button>' +
+        '<button class="primary" onclick="closeMobileMenu();openAuth(\'signup\')">✨ S\'inscrire</button>';
+    }
   }
 }
 
