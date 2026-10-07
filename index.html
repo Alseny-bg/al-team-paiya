@@ -164,12 +164,12 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
   .brand span{white-space:nowrap}
   .logo{width:38px;height:38px;flex:0 0 38px}
   .navlinks,#authNav{display:none!important}
-  .mobile-menu-btn{display:flex;width:46px;height:46px;flex:0 0 46px;margin-left:auto;align-items:center;justify-content:center;border-radius:13px;background:#f1eef7;color:#171321;font-size:24px}
+  .mobile-menu-btn{display:flex;width:46px;height:46px;flex:0 0 46px;margin-left:auto;align-items:center;justify-content:center;border-radius:13px;background:#f1eef7;color:#171321;font-size:24px;position:relative;z-index:1003;pointer-events:auto;touch-action:manipulation}
   .mobile-menu{position:absolute;left:0;right:0;top:68px;display:none;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 16px 35px #21113b18;padding:14px 16px 18px;z-index:1001}
   .mobile-menu.show{display:grid;gap:9px}
   .mobile-menu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;font-size:19px}
   .mobile-menu-head button{width:42px;height:42px;border-radius:12px;background:#f1eef7;font-size:23px}
-  .mobile-menu>button{width:100%;min-height:52px;padding:13px 15px;border-radius:12px;background:#f7f5fa;color:#171321;text-align:left;font-size:16px;font-weight:600}
+  .mobile-menu>button{width:100%;min-height:52px;padding:13px 15px;border-radius:12px;background:#f7f5fa;color:#171321;text-align:left;font-size:16px;font-weight:600;position:relative;z-index:1002;pointer-events:auto;touch-action:manipulation}
   .mobile-menu>.primary{text-align:center;background:var(--p);color:#fff}
   .mobile-menu-sep{height:1px;background:var(--line);margin:3px 0}
   .hero{padding:35px 0 28px!important;grid-template-columns:1fr!important}
@@ -253,7 +253,7 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
 
 <footer><div class="wrap">© 2026 AL Team Paiya · Des sorties, des rencontres, des souvenirs.</div></footer>
 
-<script src="app.js?v=20261007-3"></script>
+<script src="app.js?v=20261007-4"></script>
 <script>
 (function(){
   function call(name){
@@ -285,6 +285,25 @@ body{background:linear-gradient(180deg,#faf9fc 0,#f7f5fa 55%,#fff 100%)}
     var menu=document.getElementById('mobileMenu');
     if(menu) menu.classList.remove('show');
   };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var menu=document.getElementById('mobileMenu');
+    if(!menu) return;
+
+    menu.addEventListener('click', function(e){
+      var btn=e.target.closest('button');
+      if(!btn) return;
+      var label=(btn.textContent||'').trim();
+
+      try{
+        if(label.indexOf('Accueil')===0){ e.preventDefault(); closeMobileMenu(); showHome(); }
+        else if(label.indexOf('Explorer')===0){ e.preventDefault(); closeMobileMenu(); showExplore(); }
+        else if(label.indexOf('Créer')===0){ e.preventDefault(); closeMobileMenu(); openCreate(); }
+        else if(label.indexOf('Se connecter')===0){ e.preventDefault(); closeMobileMenu(); openAuth('login'); }
+        else if(label.indexOf('S\'inscrire')===0){ e.preventDefault(); closeMobileMenu(); openAuth('signup'); }
+      }catch(err){ console.error('Navigation mobile:',err); }
+    }, true);
+  });
 })();
 </script>
 </body>
