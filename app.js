@@ -665,18 +665,44 @@ async function editEvent(id) {
 }
 async function saveEventEdit(ev,id) {
   if (ev) ev.preventDefault();
-  if (!currentUser || !sb) return;
+  if (!currentUser || !sb) { toast('Connexion indisponible. Reconnecte-toi puis réessaie.'); return; }
   var e = allEvents.find(function(x){ return String(x.id) === String(id); });
-  if (!e || e.creator_id !== currentUser.id) return;
-  var payload = {title:document.getElementById('editTitle').value.trim(),category:document.getElementById('editCategory').value,place:document.getElementById('editPlace').value.trim(),city:document.getElementById('editCity').value.trim(),max_participants:Number(document.getElementById('editMax').value),event_date:document.getElementById('editDate').value,event_time:document.getElementById('editTime').value,description:document.getElementById('editDescription').value.trim(),location_address:document.getElementById('editAddress').value.trim()||null,theme_color:document.getElementById('editTheme').value,catchphrase:document.getElementById('editCatchphrase').value};
-  if (!payload.title || !payload.place || !payload.city || !payload.event_date || !payload.event_time) { toast('Complète les informations obligatoires.'); return; }
-  var editDateTime = new Date(payload.event_date + 'T' + payload.event_time);
-  if (isNaN(editDateTime.getTime()) || editDateTime.getTime() < Date.now()) { toast('Impossible de déplacer une sortie dans le passé. Choisis une date et une heure à venir.'); return; }
-  if (payload.max_participants < Number(e.count||0)) { toast('Le nombre maximum ne peut pas être inférieur aux participants actuels.'); return; }
-  var r = await sb.from('events').update(payload).eq('id',id).eq('creator_id',currentUser.id);
-  if (r.error) { toast('Impossible de modifier la sortie : '+r.error.message); return; }
-  Object.assign(e,payload);
-  closeModal(); toast('Sortie modifiée ✨'); await loadEvents(); showExplore();
+  if (!e || String(e.creator_id) !== String(currentUser.id)) { toast('Seul le créateur peut modifier cette sortie.'); return; }
+  var ids=['editTitle','editCategory','editPlace','editCity','editMax','editDate','editTime','editDescription','editAddress','editTheme','editCatchphrase'];
+  for(var i=0;i<ids.length;i++){if(!document.getElementById(ids[i])){toast('Le formulaire est incomplet. Ferme-le puis rouvre la modification.');return;}}
+  var payload={
+    title:document.getElementById('editTitle').value.trim(),
+    category:document.getElementById('editCategory').value,
+    place:document.getElementById('editPlace').value.trim(),
+    city:document.getElementById('editCity').value.trim(),
+    max_participants:Number(document.getElementById('editMax').value),
+    event_date:document.getElementById('editDate').value,
+    event_time:document.getElementById('editTime').value,
+    description:document.getElementById('editDescription').value.trim(),
+    location_address:document.getElementById('editAddress').value.trim()||null,
+    theme_color:document.getElementById('editTheme').value,
+    catchphrase:document.getElementById('editCatchphrase').value
+  };
+  if(!payload.title||!payload.place||!payload.city||!payload.event_date||!payload.event_time){toast('Complète les informations obligatoires.');return;}
+  if(!Number.isFinite(payload.max_participants)||payload.max_participants<Math.max(2,Number(e.count||0))){toast('Le nombre maximum doit être supérieur ou égal aux participants actuels.');return;}
+  var dt=new Date(payload.event_date+'T'+payload.event_time);
+  if(isNaN(dt.getTime())||dt.getTime()<Date.now()){toast('Choisis une date et une heure à venir.');return;}
+  var btn=document.querySelector('#modalBox form button[type="submit"]');
+  if(btn){btn.disabled=true;btn.textContent='Enregistrement…';}
+  try{
+    var result=await sb.from('events').update(payload).eq('id',id).eq('creator_id',currentUser.id).select('id,creator_id,title,event_date,event_time').maybeSingle();
+    if(result.error){console.error('saveEventEdit',result.error);if(btn){btn.disabled=false;btn.textContent='Enregistrer les modifications';}toast('Échec de la modification : '+result.error.message);return;}
+    if(!result.data){if(btn){btn.disabled=false;btn.textContent='Enregistrer les modifications';}toast('Aucune modification enregistrée. Vérifie que tu es connecté avec le compte créateur.');return;}
+    Object.assign(e,payload);
+    closeModal();
+    toast('Sortie modifiée ✨');
+    await loadEvents();
+    showExplore();
+  }catch(err){
+    console.error('saveEventEdit exception',err);
+    if(btn){btn.disabled=false;btn.textContent='Enregistrer les modifications';}
+    toast('Erreur : '+(err&&err.message?err.message:'impossible de modifier la sortie'));
+  }
 }
 async function deleteEvent(id) {
   if (!currentUser || !sb) return;
