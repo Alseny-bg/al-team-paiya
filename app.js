@@ -566,7 +566,7 @@ async function showEvent(id) {
         mapBlock +
         '<div class="card" style="margin-top:18px"><div class="body"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">👥 Participants</h3><span class="pill">'+e.count+'/'+e.max_participants+'</span></div><div style="margin-top:8px">'+participantHtml+'</div></div></div>' +
         '<button class="ghost" style="width:100%;margin-top:10px" onclick="toggleFavorite(\''+id+'\')">'+(favoriteIds.has(e.id)?'❤️ Retirer des favoris':'♡ Ajouter aux favoris')+'</button>' +
-        '<button id="shareEventBtn" class="ghost" style="width:100%;margin-top:10px" onclick="shareEvent(\''+id+'\')">🔗 Partager la sortie</button><button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + (currentUser && e.creator_id === currentUser.id ? '<button class="ghost" style="width:100%;margin-top:10px" onclick="editEvent(\\\''+id+'\\\')">✏️ Modifier la sortie</button>' : '') + reviewButton + button + ratingHtml +
+        '<button id="shareEventBtn" class="ghost" style="width:100%;margin-top:10px" onclick="shareEvent(\''+id+'\')">🔗 Partager la sortie</button><button id="inviteBtn" class="ghost" style="width:100%;margin-top:10px">🎟️ Inviter des membres</button>' + (currentUser && e.creator_id === currentUser.id ? '<button class="ghost" style="width:100%;margin-top:10px" onclick="editEvent(\''+id+'\')">✏️ Modifier la sortie</button>' : '') + reviewButton + button + ratingHtml +
       '</div>' +
     '</div>'
   );
